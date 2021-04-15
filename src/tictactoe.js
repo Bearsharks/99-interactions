@@ -1,9 +1,9 @@
 import React from 'react';
-import './index.css';
+import styles from './tictactoe.module.css';
 
 function Square(props) {
     return (
-      <button className="square" onClick={props.onClick}>
+      <button className={styles.square} onClick={props.onClick}>
         {props.value}
       </button>
     );
@@ -22,17 +22,17 @@ function Square(props) {
     render() {
       return (
         <div>
-          <div className="board-row">
+          <div className={styles.boardrow}>
             {this.renderSquare(0)}
             {this.renderSquare(1)}
             {this.renderSquare(2)}
           </div>
-          <div className="board-row">
+          <div className={styles.boardrow}>
             {this.renderSquare(3)}
             {this.renderSquare(4)}
             {this.renderSquare(5)}
           </div>
-          <div className="board-row">
+          <div className={styles.boardrow}>
             {this.renderSquare(6)}
             {this.renderSquare(7)}
             {this.renderSquare(8)}
@@ -106,16 +106,16 @@ function Square(props) {
       } else {
         status = "Next player: " + (this.state.xIsNext ? "X" : "O");
       }
-  
+
       return (
-        <div className="game">
-          <div className="game-board">
+        <div className={styles.game}>
+          <div className={styles.gameboard}>
             <Board
               squares={current.squares}
               onClick={ i => this.handleClick(i)}
             />
           </div>
-          <div className="game-info">
+          <div className={styles.gameinfo}>
             <div>{status}</div>
             <ol>{moves}</ol>
           </div>

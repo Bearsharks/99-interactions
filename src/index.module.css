@@ -1,0 +1,26 @@
+body {
+  font: 14px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  margin: 20px;
+  background-color: #4B647F;
+} 
+canvas {
+  background: #eee;
+}
+.container {
+  margin-right: auto;
+  margin-left: auto;
+  padding-left: 15px;
+  padding-right: 15px;
+  width: 1170px;
+}
+ .linkActive{
+    pointer-events: none;
+    color:#66F6F0;
+  }
+  
+  .test {
+    background: green;
+    border: 1px solid #999;
+    height: 34px;
+    width: 50px;
+  }
