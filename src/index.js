@@ -18,9 +18,6 @@ class Main extends React.Component{
           <NavLink to={`/99-interactions/contact` } activeClassName={styles.linkActive}>Contact</NavLink>     
           <span>user</span>
         </h1>
-        <div>
-          {this.state.test}
-        </div>
         <Switch>
           <Route path={`/99-interactions/home`}>
               <Home/>
