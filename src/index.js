@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router ,Route, NavLink,Switch } from "react-router-dom";
 import styles from './index.module.css';
-import Paper from './PaperDribble';
+import Paper from './PaperDribble_new';
 import Game from './tictactoe'
 import Home from './Home'
 
@@ -26,7 +26,7 @@ class Main extends React.Component{
             <Game/>
           </Route>
           <Route path={`/99-interactions/PaperDribble`}>
-            <Paper coeff_friction={0.1}/>
+            <Paper coeff_friction={0.6} size={50}/>
           </Route>
         </Switch>        
         <div>
