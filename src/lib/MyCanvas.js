@@ -1,7 +1,8 @@
 export class MyCanvas{
   constructor(options){    
     var default_args = {
-      'state'      :   null,
+      'vars'       :   null,
+      'consts'     :   null,
       'simulate'   :   ()=>{},
       'render'     :   ()=>{},
       'init'       :   ()=>{},
@@ -10,11 +11,14 @@ export class MyCanvas{
     for (var index in default_args) {
         if (typeof options[index] == "undefined") options[index] = default_args[index];
     }
-    this.state = options.state;
+    this.vars = options.vars;
+    this.consts = options.consts;
     this.simulate = options.simulate;
     this.render = options.render;
     this.init = options.init;
-    this.delete = options.delete;
+    this._delete = options.delete;
+    this.simulResult = {};
+    this._prevSResult = {};
     this.lastReq = null;
   }
   
@@ -31,6 +35,17 @@ export class MyCanvas{
     this.lastReq = requestAnimationFrame(this.renderFrame.bind(this));
     this.context.clearRect(0, 0, this.canvas.width,  this.canvas.height);
     this._simulate();
+
+    let isRenderable = false;
+    for (var index in this.simulResult) {
+      if (this._prevSResult[index] !== this.simulResult[index]){
+        isRenderable = true;
+        this._prevSResult = {};
+        Object.assign(this._prevSResult, this.simulResult);
+      }
+    }
+    if(!isRenderable) return;
+    
     this.render();
   }
   renderPicture(){
@@ -42,6 +57,7 @@ export class MyCanvas{
   }
   delete(){
     cancelAnimationFrame(this.lastReq);
+    this._delete();
   }
   drawPolygon(param){
     console.assert(param && param.length > 2, "다각형을 구성하는 점이 너무 작습니다.");

@@ -4,26 +4,27 @@ import { Vector2D } from "./lib/Vector2D"
 
 function Paper(props) { 
   let canvasRef = useRef(null);  
-  let curPos = [200,200];
-  let curV = new Vector2D(props.size,0);
+  let curPos = [-100,-100];
 
   let mycanvas = new MyCanvas({
-    state : {
-      pos : [200,200],
-      v : new Vector2D(0,0),
+    consts :{
+      initialV : new Vector2D(props.size,0),
+      size : props.size,
+      initialPos : [-100,-100],
+    },
+    vars : {
       isClicked : false,
       gra : null,
-      size : props.size,
       calCurV : (_curPos)=>{
-        let moveV = new Vector2D(mycanvas.state.pos,_curPos);
+        let moveV = new Vector2D(mycanvas.simulResult.pos,_curPos);
         //벡터 분해
-        let projecV = moveV.projection(mycanvas.state.v);//x
+        let projecV = moveV.projection(mycanvas.simulResult.v);//x
         let orthoV = new Vector2D(moveV).subtract(projecV);//y    
         let moveVForP2 = projecV.add(orthoV.multiply(props.coeff_friction));  
         //p2값 계산
-        let prevp2 = mycanvas.state.v.nomalize().multiply(mycanvas.state.size);
-        prevp2.x += mycanvas.state.pos[0];
-        prevp2.y += mycanvas.state.pos[1];
+        let prevp2 = mycanvas.simulResult.v.nomalize().multiply(mycanvas.consts.size);
+        prevp2.x += mycanvas.simulResult.pos[0];
+        prevp2.y += mycanvas.simulResult.pos[1];
         //p2 이동 
         prevp2.add(moveVForP2);             
         let curp2 = [prevp2.x,prevp2.y];
@@ -31,38 +32,41 @@ function Paper(props) {
       }
     },
     init : ()=>{
-      mycanvas.state.gra = mycanvas.context.createLinearGradient(-mycanvas.state.size/2, 0, mycanvas.state.size/2, 0);
-      mycanvas.state.gra.addColorStop(0, '#57D0CB');
-      mycanvas.state.gra.addColorStop(1, '#66F6F0');
+      mycanvas.vars.gra = mycanvas.context.createLinearGradient(-mycanvas.consts.size/2, 0, mycanvas.consts.size/2, 0);
+      mycanvas.vars.gra.addColorStop(0, '#57D0CB');
+      mycanvas.vars.gra.addColorStop(1, '#66F6F0');
     },
-    simulate : ()=>{
-      //시물레이트     
-      if(mycanvas.state.v.x !== 0 || mycanvas.state.v.y !== 0) curV = mycanvas.state.calCurV(curPos);      
-  
-      mycanvas.state.pos = curPos.slice();
-      mycanvas.state.v = new Vector2D(curV);
+    simulate : ()=>{   
+      if(Object.keys(mycanvas.simulResult).length !== 0){
+        mycanvas.simulResult.v = mycanvas.vars.calCurV(curPos);    
+      }else{
+        mycanvas.simulResult = {
+          v : mycanvas.consts.initialV,
+          pos : mycanvas.consts.initialPos,
+        };  
+      }
+      mycanvas.simulResult.pos = curPos.slice();
     },
-    render : ()=>{        
-        //그리기        
+    render : ()=>{          
         mycanvas.context.save(); 
-        mycanvas.context.translate(curPos[0],curPos[1]);
-        mycanvas.context.rotate(curV.getRadian());
-        if(mycanvas.state.isClicked){
+        mycanvas.context.translate(mycanvas.simulResult.pos[0],mycanvas.simulResult.pos[1]);
+        mycanvas.context.rotate(mycanvas.simulResult.v.getRadian());
+        if(mycanvas.vars.isClicked){
           mycanvas.drawPolygon([
-              [-0.4*mycanvas.state.size,-mycanvas.state.size/2 - mycanvas.state.size/10],
-              [mycanvas.state.size,-mycanvas.state.size/2],
-              [mycanvas.state.size,mycanvas.state.size/2],
-              [-0.4*mycanvas.state.size,mycanvas.state.size/2 + mycanvas.state.size/10]            
+              [-0.4*mycanvas.consts.size,-mycanvas.consts.size/2 - mycanvas.consts.size/10],
+              [mycanvas.consts.size,-mycanvas.consts.size/2],
+              [mycanvas.consts.size,mycanvas.consts.size/2],
+              [-0.4*mycanvas.consts.size,mycanvas.consts.size/2 + mycanvas.consts.size/10]            
           ]);
           mycanvas.fill('#66F6F0');
         }else{
           mycanvas.drawPolygon([
-            [-0.4*mycanvas.state.size,-mycanvas.state.size/2 - mycanvas.state.size/10],
-            [mycanvas.state.size,-mycanvas.state.size/2],
-            [mycanvas.state.size,mycanvas.state.size/2],
-            [-0.4*mycanvas.state.size,mycanvas.state.size/2 + mycanvas.state.size/10]            
+            [-0.4*mycanvas.consts.size,-mycanvas.consts.size/2 - mycanvas.consts.size/10],
+            [mycanvas.consts.size,-mycanvas.consts.size/2],
+            [mycanvas.consts.size,mycanvas.consts.size/2],
+            [-0.4*mycanvas.consts.size,mycanvas.consts.size/2 + mycanvas.consts.size/10]            
           ]);
-          mycanvas.fill(mycanvas.state.gra);
+          mycanvas.fill(mycanvas.vars.gra);
         }
         mycanvas.context.restore();      
     },
@@ -74,10 +78,10 @@ function Paper(props) {
   }
 
   const mouseDown = (e)=>{      
-    mycanvas.state.isClicked = true;
+    mycanvas.vars.isClicked = true;
   }
   const mouseUp = (e)=>{    
-    mycanvas.state.isClicked = false;
+    mycanvas.vars.isClicked = false;
   }
 
   useEffect(() => {
