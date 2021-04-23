@@ -8,13 +8,44 @@ function Paper(props) {
 
   let mycanvas = new MyCanvas({
     consts :{
+      totalFlipTime : 100, 
       initialV : new Vector2D(props.size,0),
       size : props.size,
       initialPos : [-100,-100],
-    },
-    vars : {
-      isClicked : false,
-      gra : null,
+      flipState :{
+        done : 0,
+        fliping : 1,
+        unfliping : 2,
+      },
+      unflipedSquare :[
+          [-0.4*props.size,-props.size/2 - props.size/10],
+          [props.size,-props.size/2],
+          [props.size,props.size/2],
+          [-0.4*props.size,props.size/2 + props.size/10]            
+        ],
+      flipedSquare :[
+            [-props.size/2,-props.size/2],
+            [props.size,-props.size/2],
+            [props.size,props.size/2],
+            [-props.size/2,props.size/2]            
+        ],
+      doflip : ()=>{
+        if(mycanvas.vars.flipState !== mycanvas.consts.flipState.done) return;
+        mycanvas.vars.flipState = mycanvas.consts.flipState.fliping;
+        
+        if(mycanvas.simulResult && mycanvas.simulResult.progress) {
+          mycanvas.simulResult.progress = 0; 
+        }
+        mycanvas.vars.isUnflipPended = false;
+      },
+      unflip : ()=>{
+        if(mycanvas.vars.flipState !== mycanvas.consts.flipState.done) return;
+        mycanvas.vars.flipState = mycanvas.consts.flipState.unfliping;
+        if(mycanvas.simulResult && mycanvas.simulResult.progress) {
+          mycanvas.simulResult.progress = 0; 
+        }
+        mycanvas.vars.isUnflipPended = false;
+      },
       calCurV : (_curPos)=>{
         let moveV = new Vector2D(mycanvas.simulResult.pos,_curPos);
         //벡터 분해
@@ -31,43 +62,76 @@ function Paper(props) {
         return new Vector2D(_curPos, curp2);
       }
     },
+    vars : {
+      flipState : 0,
+      isClicked : false,
+      gra : null,
+      isUnflipPended : false,
+    },
     init : ()=>{
       mycanvas.vars.gra = mycanvas.context.createLinearGradient(-mycanvas.consts.size/2, 0, mycanvas.consts.size/2, 0);
       mycanvas.vars.gra.addColorStop(0, '#57D0CB');
       mycanvas.vars.gra.addColorStop(1, '#66F6F0');
+      mycanvas.vars.flipState = mycanvas.consts.flipState.done;
     },
-    simulate : ()=>{   
-      if(Object.keys(mycanvas.simulResult).length !== 0){
-        mycanvas.simulResult.v = mycanvas.vars.calCurV(curPos);    
-      }else{
-        mycanvas.simulResult = {
+    simulate : (timestamp)=>{
+      let simulRes = mycanvas.simulResult;
+      let totalFlipTime = mycanvas.consts.totalFlipTime;      
+      if(!simulRes){ //처음이면
+        simulRes = { //초기화
           v : mycanvas.consts.initialV,
-          pos : mycanvas.consts.initialPos,
-        };  
+          pos : curPos.slice(),
+          poligon : mycanvas.consts.unflipedSquare,
+          gra : mycanvas.vars.gra,
+        };
+        mycanvas.simulResult = simulRes;
+      }else{ //타임스탬프로 위치 각도 플립정도 계산
+        simulRes.v = mycanvas.consts.calCurV(curPos);
+        simulRes.pos = curPos.slice();
       }
-      mycanvas.simulResult.pos = curPos.slice();
-    },
-    render : ()=>{          
-        mycanvas.context.save(); 
-        mycanvas.context.translate(mycanvas.simulResult.pos[0],mycanvas.simulResult.pos[1]);
-        mycanvas.context.rotate(mycanvas.simulResult.v.getRadian());
-        if(mycanvas.vars.isClicked){
-          mycanvas.drawPolygon([
-              [-0.4*mycanvas.consts.size,-mycanvas.consts.size/2 - mycanvas.consts.size/10],
-              [mycanvas.consts.size,-mycanvas.consts.size/2],
-              [mycanvas.consts.size,mycanvas.consts.size/2],
-              [-0.4*mycanvas.consts.size,mycanvas.consts.size/2 + mycanvas.consts.size/10]            
-          ]);
-          mycanvas.fill('#66F6F0');
-        }else{
-          mycanvas.drawPolygon([
-            [-0.4*mycanvas.consts.size,-mycanvas.consts.size/2 - mycanvas.consts.size/10],
-            [mycanvas.consts.size,-mycanvas.consts.size/2],
-            [mycanvas.consts.size,mycanvas.consts.size/2],
-            [-0.4*mycanvas.consts.size,mycanvas.consts.size/2 + mycanvas.consts.size/10]            
-          ]);
-          mycanvas.fill(mycanvas.vars.gra);
+      //플립상태 플립정도 를 이용 그라데이션과 폴리곤 정점계산  
+      if(mycanvas.vars.flipState !== mycanvas.consts.flipState.done){
+        if(!simulRes.time){//상태바뀌고 처음이면 
+          simulRes.time = timestamp-1;
+          simulRes.progress = 0;
         }
+        simulRes.progress = Math.min(1000, simulRes.progress + (1000 / totalFlipTime) * (timestamp - simulRes.time));
+        simulRes.time = timestamp;
+        //정점계산
+        
+        let srcPoligon = mycanvas.consts.unflipedSquare;
+        let dstPoligon = mycanvas.consts.flipedSquare;
+        if(mycanvas.vars.flipState === mycanvas.consts.flipState.upfliping){
+          [srcPoligon, dstPoligon] = [dstPoligon, srcPoligon];
+        }        
+        simulRes.poligon = Vector2D.interpolation(srcPoligon,dstPoligon,simulRes.progress/1000);
+        //그라데이션 계산
+        //플립 #57D0CB -> #66F6F0 언플립#66F6F0 -> #57D0CB 
+        let srcColor = [0x57,0xD0,0xCB];
+        let dstColor = [0x66,0xF6,0xF0];
+        if(mycanvas.vars.flipState === mycanvas.consts.flipState.upfliping){
+          [srcColor, dstColor] = [dstColor, srcColor];
+        }
+        let tgtcolor = Vector2D.interpolation(srcColor,dstColor,simulRes.progress/1000);
+        tgtcolor = tgtcolor.map(el=>Math.round(el).toString(16).toUpperCase().padStart(2, '0'));
+        mycanvas.vars.gra.addColorStop(0, "#" + tgtcolor.join(""));
+        simulRes.gra = mycanvas.vars.gra;
+        if(simulRes.progress > 999){
+          simulRes.progress = undefined;
+          simulRes.time = undefined;
+          mycanvas.vars.flipState = mycanvas.consts.flipState.done;
+        }
+        
+      }
+      
+    },
+    render : ()=>{      
+        let simulRes = mycanvas.simulResult;
+        mycanvas.context.save(); 
+        mycanvas.context.translate(simulRes.pos[0],simulRes.pos[1]);
+        mycanvas.context.rotate(simulRes.v.getRadian());
+        mycanvas.drawPolygon(simulRes.poligon);
+        mycanvas.fill(simulRes.gra);
         mycanvas.context.restore();      
     },
   });
@@ -76,12 +140,21 @@ function Paper(props) {
     curPos[0] = e.clientX - canvasRef.current.offsetLeft;
     curPos[1] = e.clientY - canvasRef.current.offsetTop;
   }
-
-  const mouseDown = (e)=>{      
-    mycanvas.vars.isClicked = true;
+  const mouseEnter = (e)=>{
+    curPos[0] = e.clientX - canvasRef.current.offsetLeft;
+    curPos[1] = e.clientY - canvasRef.current.offsetTop;
+    mycanvas.canAnimRun = true;
+    mycanvas.canRender = true;
   }
-  const mouseUp = (e)=>{    
-    mycanvas.vars.isClicked = false;
+  const mouseLeave = (e)=>{      
+    mycanvas.canAnimRun = false;
+    mycanvas.canRender = false;
+  }
+  const mouseDown = (e)=>{      
+    mycanvas.consts.doflip();
+  }
+  const mouseUp = (e)=>{
+    mycanvas.consts.unflip();
   }
 
   useEffect(() => {
@@ -90,10 +163,15 @@ function Paper(props) {
       mycanvas.delete();
     }
   }, []);
-
     
   return (
-    <canvas onMouseMove={mouseMove} onMouseDown={mouseDown} onMouseUp={mouseUp} ref={canvasRef} width="1000" height="800">이 브라우저는 캔버스를 지원하지 않습니다.</canvas>
+    <canvas 
+      onMouseMove={mouseMove} 
+      onMouseDown={mouseDown}
+      onMouseUp={mouseUp}
+      onMouseEnter={mouseEnter}
+      onMouseLeave={mouseLeave}
+      ref={canvasRef} width="1000" height="800">이 브라우저는 캔버스를 지원하지 않습니다.</canvas>
   );
 }
   

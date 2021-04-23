@@ -17,9 +17,11 @@ export class MyCanvas{
     this.render = options.render;
     this.init = options.init;
     this._delete = options.delete;
-    this.simulResult = {};
-    this._prevSResult = {};
+    this.simulResult = null;
+    this._prevSResult = null;
     this.lastReq = null;
+    this.canAnimRun = false;
+    this.canRender = false;
   }
   
   animStart(_canvas){
@@ -31,29 +33,21 @@ export class MyCanvas{
     this.context = _canvas.getContext('2d');
     this.init();
   }
-  renderFrame(){
+  renderFrame(timestamp){    
     this.lastReq = requestAnimationFrame(this.renderFrame.bind(this));
+    if(!this.canAnimRun) return;    
     this.context.clearRect(0, 0, this.canvas.width,  this.canvas.height);
-    this._simulate();
-
-    let isRenderable = false;
-    for (var index in this.simulResult) {
-      if (this._prevSResult[index] !== this.simulResult[index]){
-        isRenderable = true;
-        this._prevSResult = {};
-        Object.assign(this._prevSResult, this.simulResult);
-      }
-    }
-    if(!isRenderable) return;
+    this._simulate(timestamp);
+    if(!this.canRender) return;
+    this.render(timestamp);
     
-    this.render();
   }
   renderPicture(){
     this.context.clearRect(0, 0, this.canvas.width,  this.canvas.height);
     this.render();
   }
-  _simulate(){
-    this.simulate();
+  _simulate(timestamp){
+    this.simulate(timestamp);
   }
   delete(){
     cancelAnimationFrame(this.lastReq);

@@ -14,6 +14,15 @@ export class Vector2D{
       this.y = 0;
     }    
   }
+  static interpolation(src, dst, coeff){
+    if(!src.length && !dst.length) return (1-coeff)*src + coeff*dst;
+    if(src.length !== dst.length) return;
+    let ret = [];
+    for(let i = 0; i < src.length;i++){
+      ret[i] = Vector2D.interpolation(src[i], dst[i], coeff);
+    }
+    return ret;
+  }
 
   dotProduct(v) {
     return this.x * v.x + this.y * v.y;
