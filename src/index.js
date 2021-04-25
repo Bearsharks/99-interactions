@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router ,Route, NavLink,Switch } from "react-router-dom";
 import styles from './index.module.css';
-import Paper from './PaperDribble_new';
+import Paper from './PaperDribble';
 import Game from './tictactoe'
 import Home from './Home'
 
