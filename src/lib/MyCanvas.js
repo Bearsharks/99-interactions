@@ -42,7 +42,8 @@ export class MyCanvas{
     this.render(timestamp);
     
   }
-  renderPicture(){
+  renderPicture(_canvas){
+    this._init(_canvas);
     this.context.clearRect(0, 0, this.canvas.width,  this.canvas.height);
     this.render();
   }

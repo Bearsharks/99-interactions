@@ -5,6 +5,7 @@ import styles from './index.module.css';
 import Paper from './PaperDribble';
 import Game from './tictactoe'
 import Home from './Home'
+import Mosaic from './Mosaic'
 
 
 class Main extends React.Component{
@@ -14,8 +15,9 @@ class Main extends React.Component{
         <h1>
           <NavLink to={`/99-interactions/home` } activeClassName={styles.linkActive}>Home</NavLink>     
           <NavLink to={`/99-interactions/Tags` } activeClassName={styles.linkActive}>Tags</NavLink>     
-          <NavLink to={`/99-interactions/PaperDribble` } activeClassName={styles.linkActive}>About</NavLink>     
-          <NavLink to={`/99-interactions/contact` } activeClassName={styles.linkActive}>Contact</NavLink>     
+          <NavLink to={`/99-interactions/paperDribble` } activeClassName={styles.linkActive}>About</NavLink>     
+          <NavLink to={`/99-interactions/contact` } activeClassName={styles.linkActive}>Contact</NavLink>  
+          <NavLink to={`/99-interactions/test` } activeClassName={styles.linkActive}>test</NavLink>   
           <span>user</span>
         </h1>
         <Switch>
@@ -25,8 +27,11 @@ class Main extends React.Component{
           <Route path={`/99-interactions/about`}>
             <Game/>
           </Route>
-          <Route path={`/99-interactions/PaperDribble`}>
+          <Route path={`/99-interactions/paperDribble`}>
             <Paper coeff_friction={0.6} size={50}/>
+          </Route>
+          <Route path={`/99-interactions/test`}>
+            <Mosaic/>
           </Route>
         </Switch>        
         <div>
