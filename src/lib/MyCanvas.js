@@ -67,4 +67,23 @@ export class MyCanvas{
     this.context.fillStyle = style;
     this.context.fill();
   }
+  static rgb2hsv(rgb) {
+    let v = Math.max(rgb[0],rgb[1],rgb[2]), c = v-Math.min(rgb[0],rgb[1],rgb[2]);
+    let h = c && ((v===rgb[0]) ? (rgb[1]-rgb[2])/c : ((v===rgb[1]) ? 2+(rgb[2]-rgb[0])/c : 4+(rgb[0]-rgb[1])/c)); 
+    return [Math.round(60*(h<0?h+6:h)), v&&c/v, v];
+  }
+  static hsv2rgb(hsv){                            
+    let f = (n,k=(n+hsv[0]/60)%6) => hsv[2] - hsv[2]*hsv[1]*Math.max( Math.min(k,4-k,1), 0);     
+    return [f(5),f(3),f(1)];       
+  }
+  static img2greyScale(imgData){
+    let pixels = imgData.data;
+    for (var i = 0; i < pixels.length; i += 4) {
+        let lightness = parseInt((3*pixels[i] + 4*pixels[i + 1] + pixels[i + 2]) >>> 3);
+        pixels[i] = lightness;
+        pixels[i + 1] = lightness;
+        pixels[i + 2] = lightness;
+    }
+    return imgData;
+  }
 }  

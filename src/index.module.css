@@ -11,8 +11,7 @@ canvas {
   margin-left: auto;
   padding-left: 15px;
   padding-right: 15px;
-  width: 1170px;
-}
+  }
  .linkActive{
     pointer-events: none;
     color:#66F6F0;

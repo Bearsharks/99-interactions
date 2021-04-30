@@ -9,16 +9,20 @@ class Card extends React.Component{
         </div>
       );
     }
-  }
+}
 
 class Home extends React.Component{
+  
     render(){
+      let onClickHandler = ()=>{
+        fetch("http://localhost:4000/images", {
+          method: 'POST',
+        }).then(res => res.json())
+        .then(json => console.log(json));
+       }
       return (  
-            <div className={styles.container} >
-                <Card/>
-                <Card/>
-                <Card/>
-                <Card/>
+            <div onClick={onClickHandler} className={styles.container} >
+                <Card />
             </div>
       );
     }
