@@ -44,6 +44,7 @@ export class MyCanvas{
   }
   renderPicture(_canvas){
     this._init(_canvas);
+    if(!this.canRender) return;
     this.context.clearRect(0, 0, this.canvas.width,  this.canvas.height);
     this.render();
   }
@@ -75,6 +76,33 @@ export class MyCanvas{
   static hsv2rgb(hsv){                            
     let f = (n,k=(n+hsv[0]/60)%6) => hsv[2] - hsv[2]*hsv[1]*Math.max( Math.min(k,4-k,1), 0);     
     return [f(5),f(3),f(1)];       
+  }
+  static getGreyScale(imgData){
+    let array = imgData;
+    if(array.data) array = array.data;
+    return parseInt((3*array[0] + 4*array[1] + array[2]) >>> 3);
+  }
+  static lightnessMul(imgData,k){
+    let res = new ImageData(imgData.width,imgData.height);
+    var pixels = new Uint8ClampedArray(imgData.data);
+    for (var i = 0; i < pixels.length; i += 4) {
+      pixels[i] *= k;
+      pixels[i + 1] *= k;
+      pixels[i + 2] *= k;
+    }
+    res.data.set(pixels);
+    return res;
+  }
+  static lightnessAdd(imgData,k){
+    let res = new ImageData(imgData.width,imgData.height);
+    var pixels = new Uint8ClampedArray(imgData.data);
+    for (var i = 0; i < pixels.length; i += 4) {
+      pixels[i] += k;
+      pixels[i + 1] += k;
+      pixels[i + 2] += k;
+    }
+    res.data.set(pixels);
+    return res;
   }
   static img2greyScale(imgData){
     let pixels = imgData.data;
