@@ -31,7 +31,7 @@ class Main extends React.Component{
             <Paper coeff_friction={0.6} size={50}/>
           </Route>
           <Route path={`/99-interactions/test`}>
-            <Mosaic src={`/99-interactions/images/macarons.jpg`}/>
+            <Mosaic src={`/99-interactions/images/dessert.jpg`}/>
           </Route>
         </Switch>        
         <div>
