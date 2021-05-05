@@ -1,6 +1,7 @@
 const workercode = () => {
     onmessage = function(e) {
-        let imgData = e.data;
+        let imgData = e.data[0];
+        let imgidx = e.data[1];
         let pixels = imgData.data;
         let lightness = 0;
         for (var i = 0; i < pixels.length; i += 4) {
@@ -8,7 +9,7 @@ const workercode = () => {
         }
         let cnt = imgData.data.length/4;
         lightness = parseInt(lightness / cnt);
-        postMessage([lightness, imgData]);
+        postMessage([lightness, imgData,imgidx]);
     }
 };
 

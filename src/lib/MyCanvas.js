@@ -20,8 +20,8 @@ export class MyCanvas{
     this.simulResult = null;
     this._prevSResult = null;
     this.lastReq = null;
-    this.canAnimRun = false;
-    this.canRender = false;
+    this.canAnimRun = true;
+    this.canRender = true;
   }
   
   animStart(_canvas){
@@ -33,7 +33,7 @@ export class MyCanvas{
     this.context = _canvas.getContext('2d');
     this.init();
   }
-  renderFrame(timestamp){    
+  renderFrame(timestamp){   
     this.lastReq = requestAnimationFrame(this.renderFrame.bind(this));
     if(!this.canAnimRun) return;    
     this.context.clearRect(0, 0, this.canvas.width,  this.canvas.height);

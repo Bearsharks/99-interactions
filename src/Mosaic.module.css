@@ -1,3 +1,8 @@
+header{
+    position:fixed;
+   left:0px;
+   top:0px;
+}
 .width100 {
     width : 100%;
 }
@@ -6,4 +11,10 @@
 }
 .dispNone {
     display : none;
+}
+canvas{
+    margin-right: auto;
+    margin-left: auto;
+    width: 100%;
+    max-width: 800px;
 }

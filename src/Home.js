@@ -16,7 +16,7 @@ class Home extends React.Component{
     render(){
       let onClickHandler = ()=>{
         fetch("http://localhost:4000/images", {
-          method: 'POST',
+          method: 'GET',
         }).then(res => res.json())
         .then(json => console.log(json));
        }

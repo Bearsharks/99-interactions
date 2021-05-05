@@ -3,6 +3,7 @@ const workercode = () => {
         let isFull = e.data.isFull;
         let lightness = e.data.lightness;
         let imgData = e.data.imgData;
+        let imgidx = e.data.imgidx;
         let nOfSameLightnessImgs = e.data.nOfSameLightnessImgs;
         let pixels = new Uint8ClampedArray(imgData.data);
         for (let i = 0; i < pixels.length; i += 4) {
@@ -13,7 +14,7 @@ const workercode = () => {
         }
         let res = [];
         for(let d = -20; d <= 10 ;d++){
-            if(lightness + d >= 10 && lightness + d <= 235 
+            if(lightness + d >= 5 && lightness + d <= 245 
                 && isFull[lightness + d] <= nOfSameLightnessImgs) {
                 let copy = new ImageData(imgData.width,imgData.height);
                 let dataCopy = new Uint8ClampedArray(pixels);
@@ -32,7 +33,7 @@ const workercode = () => {
                     }
                 }
                 copy.data.set(dataCopy);
-                res.push([lightness+d,copy]);
+                res.push([lightness+d,copy,imgidx]);
             }
         }
         postMessage(res);

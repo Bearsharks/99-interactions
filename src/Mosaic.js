@@ -1,27 +1,37 @@
-import React, { useEffect,useRef } from 'react';
+import React, { useEffect,useRef, useState } from 'react';
 import { MyCanvas } from './lib/MyCanvas';
 import CalLiWorker from "./calLiWorker";
 import GreyScaleMaker from "./greyScaleMaker";
-import images from './lib/Images';
 import styles from './Mosaic.module.css';
+import data from './data.json';
 
-const MosaicSize = 50;
-const NumOfPixel = 90;
-const canvasSize = 1000;
+const MosaicSize = 30;
+const NumOfPixel = 100;
+const canvasSize = 800;
 class MosaicInfo{
     constructor(){   
         this.bannedList = new Set();
-        this.imageIdx = 0;
+        this.imageIdx = null;
     }
 };
-function Mosaic(props) { 
+const Mosaic = React.memo((props)=> { 
     let canvasRef = useRef(null);
     let originCanvasRef = useRef(null);
     let tmpCanvasRef = useRef(null);
-    let lowResBGImgRef = useRef(null);
     let bgImgRef = useRef(null);
     let bgImg = {};
-    
+    let images = [];
+    /*fetch("http://52.231.32.202/images", {
+          method: 'GET',
+        }).then(res => res.json())
+        .then(json =>{
+            images = json.value;
+            bgImgRef.current.crossOrigin = "Anonymous";
+            bgImgRef.current.src = images[0].thumbnailUrl;
+        });*/
+
+    images = data.value;
+
     let myc = new MyCanvas({
         consts :{
             setPos : (dx,dy)=>{
@@ -33,7 +43,7 @@ function Mosaic(props) {
             zoom : (posX,posY,d)=>{
                 let ratioX = posX/canvasSize;
                 let ratioY = posY/canvasSize;
-
+                d *= myc.vars.zoomScale; 
                 let prevSize = myc.vars.originSize / myc.vars.zoomScale;  
                 myc.vars.zoomScale = Math.min(myc.vars.maxZoomScale,Math.max(1,myc.vars.zoomScale+d));      
                 let viewportSize = myc.vars.originSize / myc.vars.zoomScale;  
@@ -42,12 +52,73 @@ function Mosaic(props) {
                 let prevb = prevSize * ratioY; 
                 let cura = viewportSize * ratioX;   
                 let curb = viewportSize * ratioY;
-                let dx,dy;
-                [dx,dy] = myc.consts.getClampVal(cura - preva,curb - prevb);
+                let [dx,dy]= myc.consts.getClampVal(cura - preva,curb - prevb);
 
                 myc.consts.setPos(dx,dy); 
             },
+            posToIdx : (posX,posY)=>{
+                let ratioX = posX/canvasSize;
+                let ratioY = posY/canvasSize;
+                let viewportSize = myc.vars.originSize / myc.vars.zoomScale;  
+                let dx = viewportSize * ratioX;   
+                let dy = viewportSize * ratioY;
 
+                let idxC = Math.floor( (-myc.vars.pos[0] + dx)/MosaicSize);
+                let idxR = Math.floor( (-myc.vars.pos[1] + dy)/MosaicSize);
+                return [idxC,idxR];
+            },
+            click : (posX,posY)=>{
+                let x = myc.vars.curHoveredPos[0];
+                let y = myc.vars.curHoveredPos[1];
+                if(0 <= x && x < originCanvas.vars.numOfColPixel && 0 <= y && y < originCanvas.vars.numOfRowPixel
+                    && originCanvas.vars.mosaicInfo[y][x].imageIdx !== null){
+                      //현재 마우스 포인터가 캔버스 기준으로
+                      //현재 인덱스는 캔버스 기준으로 바꾸면 좌상단이 몇몇인가?
+                        let viewportSize = myc.vars.originSize / myc.vars.zoomScale;  
+                        let toCanvasCoeff = canvasSize / viewportSize;
+                        let idxc = x*MosaicSize*toCanvasCoeff;
+                        let idxr = y*MosaicSize*toCanvasCoeff;
+                        let zeroc = myc.vars.pos[0] *toCanvasCoeff;
+                        let zeror = myc.vars.pos[1] *toCanvasCoeff;
+                        idxc += zeroc;
+                        idxr += zeror;
+                        //좌상단과 현재 마우스 포인터를 비교해서 모자이크에서 얼마만큼 갔고 얼마만큼 남았나 
+                        let dc = posX - idxc; 
+                        let dr = posY - idxr;
+                        let curMosaicSize = MosaicSize*toCanvasCoeff;
+                    let popUpSize = canvasSize/2 - MosaicSize;
+                    let popUpPos = [0,0];
+                    if(posX > canvasSize/2) popUpPos[0] = posX + (curMosaicSize - dc) - popUpSize;
+                    else popUpPos[0] = posX - dc;
+                    if(posY > canvasSize/2) popUpPos[1] = posY + (curMosaicSize - dr) - popUpSize;
+                    else popUpPos[1] = posY - dr;
+                    popUpPos[0] = Math.max(0,popUpPos[0])+ canvasRef.current.offsetLeft;
+                    popUpPos[1] = Math.max(0,popUpPos[1])+ canvasRef.current.offsetTop;
+                    let imageIdx = originCanvas.vars.mosaicInfo[y][x].imageIdx;
+                    let imageInfo = images[Math.floor(imageIdx)];
+                    props.popUp({
+                        popUpSize : popUpSize,
+                        popUpPos : popUpPos,
+                        imageId : imageInfo.imageId,
+                        name: imageInfo.name,
+                        thumbnail: imageInfo.thumbnail,
+                        thumbnailUrl: imageInfo.thumbnailUrl,
+                        webSearchUrl: imageInfo.webSearchUrl,                        
+                    });                  
+                }else{
+                    props.popUp(null);
+                }                
+            },            
+            emp: (posX,posY)=>{
+                let pos = myc.consts.posToIdx(posX,posY);
+                if(0 <= pos[0] && pos[0] < originCanvas.vars.numOfColPixel
+                    && 0 <= pos[1] && pos[1] < originCanvas.vars.numOfRowPixel){
+                        myc.vars.curHoveredPos = pos;
+                }else{
+                    myc.vars.curHoveredPos = [-100,-100];
+                }
+                
+            },
             move : (dx,dy)=>{
                 if(!myc.vars.isInit || !myc.vars.canMove) return;
                 dx = dx*10/myc.vars.zoomScale;
@@ -79,6 +150,7 @@ function Mosaic(props) {
         vars : {
             zoomScale : 1,
             pos : [0,0,0,0],
+            curHoveredPos : [-10,-10],
             isInit : false,
             maxZoomScale : 1,
             originSize : 1000,
@@ -95,34 +167,53 @@ function Mosaic(props) {
             myc.vars.pos[1] = myc.vars.originSize* (1-myc.vars.ratioH)/2;
             myc.vars.pos[2] = myc.vars.pos[0] + myc.vars.originSize*myc.vars.ratioW;
             myc.vars.pos[3] = myc.vars.pos[1] + myc.vars.originSize*myc.vars.ratioH;
-            myc.vars.maxZoomScale = myc.vars.originSize/canvasSize;
-            myc.vars.radioOfPic = bgImg.renderedPixel/myc.vars.originSize;          
+            myc.vars.maxZoomScale = myc.vars.originSize*(100/MosaicSize)/canvasSize;
+            myc.vars.radioOfPic = bgImg.renderedPixel/myc.vars.originSize;
+            let d = myc.vars.pos[0]+myc.vars.pos[1];
+            if(d > canvasSize/8){
+                myc.consts.zoom(canvasSize/2,canvasSize/2,myc.vars.originSize/(myc.vars.originSize-1.7*d)-1);
+            }
+
             myc.vars.isInit = true;
+
         },
         simulate : ()=>{
-            let k = myc.vars.originSize / myc.vars.zoomScale;
+            let viewportSize = myc.vars.originSize / myc.vars.zoomScale;
             let picPos = [-bgImg.zeroX+myc.vars.pos[0]*myc.vars.radioOfPic, -bgImg.zeroY+myc.vars.pos[1]*myc.vars.radioOfPic];
             let viewportSizeForPic = bgImg.renderedPixel /myc.vars.zoomScale;
-
+            let hoverLineSize = MosaicSize * canvasSize/viewportSize;
+            let hoveredPos = myc.vars.curHoveredPos.slice();
+            hoveredPos[0] = hoveredPos[0]*MosaicSize + myc.vars.pos[0];
+            hoveredPos[1] = hoveredPos[1]*MosaicSize + myc.vars.pos[1];
+            hoveredPos[0] *= canvasSize/viewportSize;
+            hoveredPos[1] *= canvasSize/viewportSize;
             myc.simulResult = {
-                viewportSize : k,                
+                viewportSize : viewportSize,                
                 pos : myc.vars.pos,
                 picPos : picPos,
                 viewportSizeForPic : viewportSizeForPic,
+                hoveredPos : hoveredPos,
+                hoverLineSize : hoverLineSize,
             };
         },
         render : ()=>{
             //그리기
             let res = myc.simulResult;
             myc.context.drawImage(originCanvas.canvas,
-                -res.pos[0], -res.pos[1], myc.simulResult.viewportSize, myc.simulResult.viewportSize,
+                -res.pos[0], -res.pos[1], res.viewportSize, res.viewportSize,
                 0, 0, canvasSize, canvasSize);
+            myc.context.beginPath();
+            myc.context.lineTo(res.hoveredPos[0],res.hoveredPos[1]);
+            myc.context.lineTo(res.hoveredPos[0]+res.hoverLineSize,res.hoveredPos[1]);
+            myc.context.lineTo(res.hoveredPos[0]+res.hoverLineSize,res.hoveredPos[1]+res.hoverLineSize);
+            myc.context.lineTo(res.hoveredPos[0],res.hoveredPos[1]+res.hoverLineSize);
+            myc.context.closePath();
+            myc.context.stroke();
 
-            myc.context.globalAlpha = 0.1;
+            myc.context.globalAlpha = 0.15;
             myc.context.drawImage(bgImgRef.current,
                 -res.picPos[0], -res.picPos[1], myc.simulResult.viewportSizeForPic, myc.simulResult.viewportSizeForPic,
                 0,0,canvasSize,canvasSize);
-
             myc.context.globalAlpha = 1;
             
         },
@@ -145,7 +236,8 @@ function Mosaic(props) {
                         }
                     }
                     let rd = Math.floor(Math.random() * candis.length);
-                    cur.imgidx = candis[rd][1];
+                    if(!candis[rd]) debugger;
+                    cur.imageIdx = candis[rd][1];
                     curImage = imgs[lightness][candis[rd][0]];
                     //채울때 주변에 이 사진은 쓰지 말라고 표시함
                     for(let i = -1; i <= 1; i++){
@@ -191,8 +283,7 @@ function Mosaic(props) {
                 w = numOfColPixel * base;       
                 numOfRowPixel = NumOfPixel;
             }
-            originCanvas.canvas.width = numOfColPixel;
-            originCanvas.canvas.height = numOfRowPixel; 
+
             originCanvas.vars.mosaicInfo = new Array(numOfRowPixel);
             for (var i = 0; i < numOfRowPixel; i++) {
                 originCanvas.vars.mosaicInfo[i] = new Array(numOfColPixel).fill(null).map(()=> new MosaicInfo());
@@ -204,29 +295,30 @@ function Mosaic(props) {
             bgImg.zeroY = (bgImgRef.current.height - bgImg.renderedH)/2;
             bgImg.renderedPixel = w > h ? w : h;
             //drawImage를 활용 해상도를 기준 크기까지 줄임
-            originCanvas.context.drawImage(bgImgRef.current,bgImg.zeroX,bgImg.zeroY,bgImg.renderedW,bgImg.renderedH,
+            tmpCanvasRef.current.width  = numOfColPixel;
+            tmpCanvasRef.current.height = numOfRowPixel;
+            let tmpctx = tmpCanvasRef.current.getContext('2d');
+            tmpctx.drawImage(bgImgRef.current,bgImg.zeroX,bgImg.zeroY,bgImg.renderedW,bgImg.renderedH,
                                                     0,0,numOfColPixel,numOfRowPixel);
-            originCanvas.canRender = false;
-            lowResBGImgRef.current.addEventListener("load", originCanvas.render,{once : true});
-            lowResBGImgRef.current.src = originCanvas.canvas.toDataURL();
 
-            originCanvas.canvas.width = numOfColPixel*MosaicSize;
-            originCanvas.canvas.height = numOfRowPixel*MosaicSize; 
             originCanvas.vars.base = base;
             originCanvas.vars.numOfColPixel = numOfColPixel;
             originCanvas.vars.numOfRowPixel = numOfRowPixel;
+            originCanvas.canvas.width = numOfColPixel*MosaicSize;
+            originCanvas.canvas.height = numOfRowPixel*MosaicSize;             
         },
-        render : ()=>{
+        render : ()=>{                    
             let vars = originCanvas.vars;
-            originCanvas.context.drawImage(lowResBGImgRef.current,0,0);
             //돌면서 색상 채우고, 색상정보를 저장함
-            let imageData = originCanvas.context.getImageData(0,0,vars.numOfColPixel,vars.numOfRowPixel).data;
+            let tmpctx = tmpCanvasRef.current.getContext('2d');
+            let imageData = tmpctx.getImageData(0,0,vars.numOfColPixel,vars.numOfRowPixel).data;
             for(let i = 0; i < vars.numOfRowPixel ; i++){
                 for(let j = 0; j < vars.numOfColPixel ; j++){
                     let y = i*MosaicSize;
                     let x = j*MosaicSize;
                     let curPixel = 4*(i*vars.numOfColPixel + j);
                     let lightness = parseInt((3*imageData[curPixel] + 4*imageData[curPixel+1] +imageData[curPixel+2]) >>> 3);
+                    lightness = Math.max(0,lightness-10);
                     originCanvas.context.fillStyle = 'rgb('+ lightness + ","+ lightness +',' +lightness+')';
                     originCanvas.context.fillRect(x,y,MosaicSize,MosaicSize);
                     vars.pos_lightness[lightness].push([j,i]);
@@ -235,28 +327,21 @@ function Mosaic(props) {
             //모자이크처리 이미지를 myc에 그리기 시작
             myc.canAnimRun = true;
             myc.canRender = true;
-
             //사진을 하나씩 하나씩 불러오면서 비슷한 밝기에다 추가함
-            let imageNum = images.length;            
-            tmpCanvasRef.current.width  = MosaicSize * 2 * imageNum;
-            tmpCanvasRef.current.height = MosaicSize * 2 + 2;
-            let tmpctx = tmpCanvasRef.current.getContext('2d');
+            tmpCanvasRef.current.width  = MosaicSize * 2;
+            tmpCanvasRef.current.height = MosaicSize * 2;
             
-            originCanvas.vars.imgInfo = new Array(images.length);
-            let imgInfo = originCanvas.vars.imgInfo;
-
-            const onloadhandler = (e)=>{                
-                tmpctx.drawImage(e.target, 0,0,MosaicSize*2,MosaicSize*2, e.target.idx*MosaicSize*2,0,MosaicSize*2,MosaicSize*2);
+            const onloadhandler = (e)=>{                        
+                tmpctx.drawImage(e.target, 0,0,MosaicSize*2,MosaicSize*2);
                 let imgDatas = [];
+                let idx = e.target.idx;
                 for(let i = 0; i < 4; i++){
-                    let x = e.target.idx*MosaicSize*2 + (i%2 * MosaicSize);
+                    let x = (i%2 * MosaicSize);
                     let y = Math.floor(i/2) * MosaicSize;
                     imgDatas.push(tmpctx.getImageData(x,y,MosaicSize,MosaicSize));
-                    imgDatas[i].imgidx = e.target.idx;
                 }
 
                 if (!window.Worker) {
-                    tmpctx.drawImage(e.target, 0,0,MosaicSize*2,MosaicSize*2, e.target.idx*MosaicSize*2,0,MosaicSize*2,MosaicSize*2);
                     for(let i = 0; i < 4; i++){
                         let imageData = MyCanvas.img2greyScale(imgDatas[i]);
                         let lightness = 0;
@@ -270,13 +355,14 @@ function Mosaic(props) {
                             if(lightness + d >= 10 && lightness + d <= 235 && !originCanvas.vars.isFull[lightness + d]){
                                 if(d < 0){
                                     let res = MyCanvas.lightnessMul(imageData, (lightness + d) / lightness);
-                                    res.imgidx = imageData.imgidx;
+                                    res.imgidx = idx+i/10;
                                     originCanvas.vars.imgs_lightness[lightness + d].push(res);
                                 }else if (d > 0){
                                     let res = MyCanvas.lightnessAdd(imageData, d);
-                                    res.imgidx = imageData.imgidx;
+                                    res.imgidx = idx+i/10;
                                     originCanvas.vars.imgs_lightness[lightness + d].push(res);
                                 }else{
+                                    imageData.imgidx = idx+i/10;
                                     originCanvas.vars.imgs_lightness[lightness + d].push(imageData);
                                 }
 
@@ -291,11 +377,11 @@ function Mosaic(props) {
                 }else{
                     const calLiWorker = new Worker(CalLiWorker);
                     const greyScaleMaker = new Worker(GreyScaleMaker);  
-                    calLiWorker.onmessage = function(e) {//e에는      
+                    calLiWorker.onmessage = function(e) {//e에는  
                         let lightness = e.data[0];
                         let isComplete = true;
                         for(let d = -20; d <= 10 ;d++){
-                            if(lightness + d >= 10 && lightness + d <= 235) {
+                            if(lightness + d >= 5 && lightness + d <= 245) {
                                 originCanvas.vars.isFull[lightness+d]++;
                                 if(originCanvas.vars.isFull[lightness+d] <= originCanvas.consts.nOfSameLightnessImgs){
                                     isComplete = false;
@@ -307,13 +393,15 @@ function Mosaic(props) {
                                 isFull : originCanvas.vars.isFull,
                                 lightness : lightness,
                                 nOfSameLightnessImgs : originCanvas.consts.nOfSameLightnessImgs,
-                                imgData : e.data[1]
+                                imgData : e.data[1],
+                                imgidx : e.data[2]
                             });
                         }                        
                     }
                     greyScaleMaker.onmessage = function(e) {//e에는                        
                         for(let i = 0; i< e.data.length;i++){
                             let lightness = e.data[i][0];
+                            e.data[i][1].imgidx = e.data[i][2];
                             originCanvas.vars.imgs_lightness[lightness].push(e.data[i][1]);
                             let curSize = originCanvas.vars.imgs_lightness[lightness].length;
                             if(curSize >= originCanvas.consts.nOfSameLightnessImgs){
@@ -322,11 +410,11 @@ function Mosaic(props) {
                         }                       
                     }
                     for(let i = 0; i < 4; i++){
-                        calLiWorker.postMessage(imgDatas[i]);
+                        calLiWorker.postMessage([imgDatas[i],idx+i/10]);
                     }                     
                 }
-                imgInfo[e.target.idx].tmpimg.onload = null;
-                imgInfo[e.target.idx].tmpimg = null;
+                images[e.target.idx].tmpimg.onload = null;
+                images[e.target.idx].tmpimg = null;
             };
             
             for(let idx = 0; idx < images.length;idx++){                
@@ -334,22 +422,17 @@ function Mosaic(props) {
                 tmpimg.crossOrigin = "Anonymous";
                 tmpimg.idx = idx;                
                 tmpimg.addEventListener("load", onloadhandler,{once : true});
-                tmpimg.src = images[idx];
-                imgInfo[idx] = {
-                    tmpimg : tmpimg,
-                    src : images[idx],
-                    //!!다른 정보들
-                };
+                tmpimg.src = images[idx].thumbnailUrl+"&w=100&h=100&c=7";
+                images[idx].tmpimg = tmpimg;
             }
             //정보 보여주는 팝업창을 띄우기
-            //서버 구축
-            //api연결
-            //일반용 테스트용 캐시구현
         },
     });
     
     useEffect(() => {
            
+    bgImgRef.current.crossOrigin = "Anonymous";
+    bgImgRef.current.src = images[0].thumbnailUrl;
         return ()=>{
             originCanvas.delete();
             myc.delete();
@@ -366,32 +449,45 @@ function Mosaic(props) {
         }
     }
 
+    let isMoved = false;
+    let downPoint = [];
+
     const mouseMove = (e)=>{
+        let x = e.pageX - canvasRef.current.offsetLeft;
+        let y = e.pageY - canvasRef.current.offsetTop;
+        myc.consts.emp(x,y);
         myc.consts.move(e.movementX, e.movementY);  
     }
+    
     const onClickhandler = (e)=>{
-
+        if(isMoved) return;
+        let x = e.pageX - canvasRef.current.offsetLeft;
+        let y = e.pageY - canvasRef.current.offsetTop;
+        myc.consts.click(x,y);
     }
     const mouseDown = (e)=>{      
+        downPoint = [e.clientX, e.clientY];
         myc.vars.canMove = true;
     }
     const mouseUp = (e)=>{
+        let d = Math.abs(e.clientX-downPoint[0]);
+        d += Math.abs(e.clientY-downPoint[1]);
+        isMoved = !!d;
         myc.vars.canMove = false;
     }
     const mouseLeave = (e)=>{      
         myc.vars.canMove = false;
     }
-    const onImageLoaded = (e)=>{
-        originCanvas.renderPicture(originCanvasRef.current);        
-        myc.animStart(canvasRef.current);   
+    const onImageLoaded = (e)=>{          
+        myc.canRender = false;
+        myc.canAnimRun = false;
+        originCanvas.renderPicture(originCanvasRef.current);
+        myc.animStart(canvasRef.current);
     }
     return (
         <>
-        <img className={styles.dispNone} ref={lowResBGImgRef}></img>
-        <img className={styles.dispNone} src={props.src} ref={bgImgRef}
-            onLoad={onImageLoaded}            
-        ></img>
-        <canvas ref={canvasRef} width={canvasSize} height={canvasSize}
+        <img className={styles.dispNone} ref={bgImgRef} onLoad={onImageLoaded}></img>
+        <canvas className={styles.width100} ref={canvasRef} width={canvasSize} height={canvasSize}
             className={'asdf'}
             onClick={onClickhandler}
             onWheel={onWheelhandler}
@@ -405,10 +501,10 @@ function Mosaic(props) {
         <canvas className={styles.dispNone} ref={tmpCanvasRef} width="100" height="100">
         </canvas> 
         <canvas className={styles.dispNone} ref={originCanvasRef} width="100" height="100">
-        </canvas>        
+        </canvas>                
         </>  
         
     );
-}
+});
 
 export default Mosaic;
