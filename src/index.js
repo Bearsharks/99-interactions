@@ -15,7 +15,7 @@ class Main extends React.Component{
   popUp(popUpInfo){
     if(popUpInfo === null){
       this.hide();
-    }else if(this.state.popUpInfo === null || popUpInfo.imageId !== this.state.popUpInfo.imageId) {
+    }else{
       this.setState({
         popUpInfo: popUpInfo
       });
@@ -61,7 +61,7 @@ class App extends React.Component {
           </Switch>      
         </Router>  
         <footer>
-            <p>this will be footer</p>
+            <p>contact : iginganza@gmail.com</p>
         </footer> 
       </>      
     );

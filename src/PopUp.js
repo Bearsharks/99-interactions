@@ -23,8 +23,8 @@ function PopUp(props){
     return (
         <>
         {props.imageInfo &&
-            <div style={abs} onMouseLeave={props.hide}>            
-                <img src={props.imageInfo.thumbnailUrl+`&w=${props.imageInfo.popUpSize}&h=${props.imageInfo.popUpSize}&c=7`}/>            
+            <div className={styles.line} style={abs} onMouseLeave={props.hide}>            
+                <img className={styles.width100} src={props.imageInfo.thumbnailUrl+`&w=${props.imageInfo.popUpSize}&h=${props.imageInfo.popUpSize}&c=7`}/>            
             </div>
         }
         </>

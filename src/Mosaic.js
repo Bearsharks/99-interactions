@@ -6,7 +6,7 @@ import styles from './Mosaic.module.css';
 import data from './data.json';
 
 const MosaicSize = 30;
-const NumOfPixel = 100;
+const NumOfPixel = 50;
 const canvasSize = 800;
 class MosaicInfo{
     constructor(){   
@@ -31,7 +31,7 @@ const Mosaic = React.memo((props)=> {
         });*/
 
     images = data.value;
-
+    const preventDefault = e => e.preventDefault();
     let myc = new MyCanvas({
         consts :{
             setPos : (dx,dy)=>{
@@ -57,8 +57,8 @@ const Mosaic = React.memo((props)=> {
                 myc.consts.setPos(dx,dy); 
             },
             posToIdx : (posX,posY)=>{
-                let ratioX = posX/canvasSize;
-                let ratioY = posY/canvasSize;
+                let ratioX = posX/canvasRef.current.clientWidth;
+                let ratioY = posY/canvasRef.current.clientWidth;
                 let viewportSize = myc.vars.originSize / myc.vars.zoomScale;  
                 let dx = viewportSize * ratioX;   
                 let dy = viewportSize * ratioY;
@@ -72,28 +72,31 @@ const Mosaic = React.memo((props)=> {
                 let y = myc.vars.curHoveredPos[1];
                 if(0 <= x && x < originCanvas.vars.numOfColPixel && 0 <= y && y < originCanvas.vars.numOfRowPixel
                     && originCanvas.vars.mosaicInfo[y][x].imageIdx !== null){
-                      //현재 마우스 포인터가 캔버스 기준으로
-                      //현재 인덱스는 캔버스 기준으로 바꾸면 좌상단이 몇몇인가?
-                        let viewportSize = myc.vars.originSize / myc.vars.zoomScale;  
-                        let toCanvasCoeff = canvasSize / viewportSize;
-                        let idxc = x*MosaicSize*toCanvasCoeff;
-                        let idxr = y*MosaicSize*toCanvasCoeff;
-                        let zeroc = myc.vars.pos[0] *toCanvasCoeff;
-                        let zeror = myc.vars.pos[1] *toCanvasCoeff;
-                        idxc += zeroc;
-                        idxr += zeror;
-                        //좌상단과 현재 마우스 포인터를 비교해서 모자이크에서 얼마만큼 갔고 얼마만큼 남았나 
-                        let dc = posX - idxc; 
-                        let dr = posY - idxr;
-                        let curMosaicSize = MosaicSize*toCanvasCoeff;
-                    let popUpSize = canvasSize/2 - MosaicSize;
+                    //현재 마우스 포인터가 캔버스 기준으로
+                    //현재 인덱스는 캔버스 기준으로 바꾸면 좌상단이 몇몇인가?
+                    let viewportSize = myc.vars.originSize / myc.vars.zoomScale;  
+                    let toCanvasCoeff = canvasRef.current.clientWidth / viewportSize;
+                    let idxc = x*MosaicSize*toCanvasCoeff;
+                    let idxr = y*MosaicSize*toCanvasCoeff;
+                    let zeroc = myc.vars.pos[0] *toCanvasCoeff;
+                    let zeror = myc.vars.pos[1] *toCanvasCoeff;
+                    idxc += zeroc;
+                    idxr += zeror;
+
+                    //좌상단과 현재 마우스 포인터를 비교해서 모자이크에서 얼마만큼 갔고 얼마만큼 남았나 
+                    let dc = posX - idxc; 
+                    let dr = posY - idxr;
+                    let curMosaicSize = MosaicSize*toCanvasCoeff;
+
+
+                    let popUpSize = Math.floor(canvasRef.current.clientWidth/2 - curMosaicSize);
                     let popUpPos = [0,0];
-                    if(posX > canvasSize/2) popUpPos[0] = posX + (curMosaicSize - dc) - popUpSize;
-                    else popUpPos[0] = posX - dc;
-                    if(posY > canvasSize/2) popUpPos[1] = posY + (curMosaicSize - dr) - popUpSize;
-                    else popUpPos[1] = posY - dr;
-                    popUpPos[0] = Math.max(0,popUpPos[0])+ canvasRef.current.offsetLeft;
-                    popUpPos[1] = Math.max(0,popUpPos[1])+ canvasRef.current.offsetTop;
+                    if(posX > canvasRef.current.clientWidth/2) popUpPos[0] = posX + (curMosaicSize - dc) - popUpSize;
+                    else popUpPos[0] = (posX - dc);
+                    if(posY > canvasRef.current.clientWidth/2) popUpPos[1] = posY + (curMosaicSize - dr) - popUpSize;
+                    else popUpPos[1] = (posY - dr);
+                    popUpPos[0] = Math.min(canvasRef.current.clientWidth - popUpSize, Math.max(0,popUpPos[0])) + canvasRef.current.offsetLeft;
+                    popUpPos[1] = Math.min(canvasRef.current.clientWidth - popUpSize, Math.max(0,popUpPos[1])) + canvasRef.current.offsetTop;
                     let imageIdx = originCanvas.vars.mosaicInfo[y][x].imageIdx;
                     let imageInfo = images[Math.floor(imageIdx)];
                     props.popUp({
@@ -103,7 +106,7 @@ const Mosaic = React.memo((props)=> {
                         name: imageInfo.name,
                         thumbnail: imageInfo.thumbnail,
                         thumbnailUrl: imageInfo.thumbnailUrl,
-                        webSearchUrl: imageInfo.webSearchUrl,                        
+                        webSearchUrl: imageInfo.webSearchUrl,
                     });                  
                 }else{
                     props.popUp(null);
@@ -199,9 +202,9 @@ const Mosaic = React.memo((props)=> {
         render : ()=>{
             //그리기
             let res = myc.simulResult;
-            myc.context.drawImage(originCanvas.canvas,
+            myc.context.drawImage(...MyCanvas.getSafeRect(originCanvas.canvas,
                 -res.pos[0], -res.pos[1], res.viewportSize, res.viewportSize,
-                0, 0, canvasSize, canvasSize);
+                0, 0, canvasSize, canvasSize));
             myc.context.beginPath();
             myc.context.lineTo(res.hoveredPos[0],res.hoveredPos[1]);
             myc.context.lineTo(res.hoveredPos[0]+res.hoverLineSize,res.hoveredPos[1]);
@@ -210,12 +213,11 @@ const Mosaic = React.memo((props)=> {
             myc.context.closePath();
             myc.context.stroke();
 
-            myc.context.globalAlpha = 0.15;
-            myc.context.drawImage(bgImgRef.current,
-                -res.picPos[0], -res.picPos[1], myc.simulResult.viewportSizeForPic, myc.simulResult.viewportSizeForPic,
-                0,0,canvasSize,canvasSize);
-            myc.context.globalAlpha = 1;
-            
+            myc.context.globalAlpha = 0.5;
+            myc.context.drawImage(...MyCanvas.getSafeRect(bgImgRef.current,
+                -res.picPos[0], -res.picPos[1], res.viewportSizeForPic, res.viewportSizeForPic,
+                0,0,canvasSize,canvasSize));
+            myc.context.globalAlpha = 1;            
         },
     });
     
@@ -417,7 +419,7 @@ const Mosaic = React.memo((props)=> {
                 images[e.target.idx].tmpimg = null;
             };
             
-            for(let idx = 0; idx < images.length;idx++){                
+            for(let idx = 0; idx < images.length/4;idx++){                
                 let tmpimg = new Image();
                 tmpimg.crossOrigin = "Anonymous";
                 tmpimg.idx = idx;                
@@ -430,9 +432,9 @@ const Mosaic = React.memo((props)=> {
     });
     
     useEffect(() => {
-           
-    bgImgRef.current.crossOrigin = "Anonymous";
-    bgImgRef.current.src = images[0].thumbnailUrl;
+        canvasRef.current.addEventListener('wheel', preventDefault);
+        bgImgRef.current.crossOrigin = "Anonymous";
+        bgImgRef.current.src = images[0].thumbnailUrl;
         return ()=>{
             originCanvas.delete();
             myc.delete();
@@ -450,11 +452,33 @@ const Mosaic = React.memo((props)=> {
     }
 
     let isMoved = false;
-    let downPoint = [];
+    let prev = [];
 
-    const mouseMove = (e)=>{
-        let x = e.pageX - canvasRef.current.offsetLeft;
-        let y = e.pageY - canvasRef.current.offsetTop;
+    const onmove = (e)=>{
+        let x ,y;
+        if(e.touches){
+            if(e.touches.length == 1){
+                x = e.touches[0].pageX - canvasRef.current.offsetLeft;
+                y = e.touches[0].pageY - canvasRef.current.offsetTop;
+                e.movementX = x - prev[0];
+                e.movementY = y - prev[1];
+            }else{
+                for (var i = 0; i < prev.length; i++) {
+                    if (e.pointerId == prev[i].pointerId) {
+                        prev[i] = e;
+                        break;
+                    }
+                }
+                  
+                if(e.touches.length > 2){
+                   
+                }
+            }
+            
+        }else{
+            x = e.pageX - canvasRef.current.offsetLeft;
+            y = e.pageY - canvasRef.current.offsetTop;
+        }
         myc.consts.emp(x,y);
         myc.consts.move(e.movementX, e.movementY);  
     }
@@ -465,14 +489,30 @@ const Mosaic = React.memo((props)=> {
         let y = e.pageY - canvasRef.current.offsetTop;
         myc.consts.click(x,y);
     }
-    const mouseDown = (e)=>{      
-        downPoint = [e.clientX, e.clientY];
+    const ondown = (e)=>{
+        if(e.touches){
+            prev.push(e);            
+        }else{
+            prev = [e.clientX, e.clientY];
+        }        
         myc.vars.canMove = true;
     }
-    const mouseUp = (e)=>{
-        let d = Math.abs(e.clientX-downPoint[0]);
-        d += Math.abs(e.clientY-downPoint[1]);
-        isMoved = !!d;
+    const onup = (e)=>{
+        if(e.touches){
+            for (let i = 0; i < prev.length; i++) {
+                if (prev[i].pointerId == e.pointerId) {
+                  prev.splice(i, 1);
+                  break;
+                }
+            }
+            if(prev.length <= 0){
+                isMoved = false;
+            }            
+        }else{
+            let d = Math.abs(e.clientX-prev[0]);
+            d += Math.abs(e.clientY-prev[1]);
+            isMoved = !!d;
+        }        
         myc.vars.canMove = false;
     }
     const mouseLeave = (e)=>{      
@@ -484,17 +524,20 @@ const Mosaic = React.memo((props)=> {
         originCanvas.renderPicture(originCanvasRef.current);
         myc.animStart(canvasRef.current);
     }
+
     return (
         <>
         <img className={styles.dispNone} ref={bgImgRef} onLoad={onImageLoaded}></img>
         <canvas className={styles.width100} ref={canvasRef} width={canvasSize} height={canvasSize}
-            className={'asdf'}
             onClick={onClickhandler}
             onWheel={onWheelhandler}
-            onMouseMove={mouseMove} 
-            onMouseDown={mouseDown}
-            onMouseUp={mouseUp}
+            onMouseMove={onmove} 
+            onMouseDown={ondown}
+            onMouseUp={onup}
             onMouseLeave={mouseLeave}
+            onTouchStart={ondown}
+            onTouchMove={onmove}
+            onTouchEnd={onup}
         >
             이 브라우저는 캔버스를 지원하지 않습니다.
         </canvas> 

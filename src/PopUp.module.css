@@ -5,3 +5,10 @@
 .dispNone {
     display:none;
 }
+
+.line {
+    border: 1px solid;
+}
+.width100 {
+    width : 100%;
+}

@@ -114,4 +114,42 @@ export class MyCanvas{
     }
     return imgData;
   }
+
+  static getSafeRect( image, sx, sy, sw, sh, dx, dy, dw, dh ) {  
+    const { width, height } = image;    
+    if( sw < 0 ) {
+      sx += sw;
+      sw = Math.abs( sw );
+    }
+    if( sh < 0 ) {
+      sy += sh;
+      sh = Math.abs( sh );
+    }
+    if( dw < 0 ) {
+      dx += dw;
+      dw = Math.abs( dw );
+    }
+    if( dh < 0 ) {
+      dy += dh;
+      dh = Math.abs( dh );
+    }
+    const x1 = Math.max( sx, 0 );
+    const x2 = Math.min( sx + sw, width );
+    const y1 = Math.max( sy, 0 );
+    const y2 = Math.min( sy + sh, height );
+    const w_ratio = dw / sw;
+    const h_ratio = dh / sh;
+
+    return [
+      image,
+      x1,
+      y1,
+      x2 - x1,
+      y2 - y1,
+      sx < 0 ? dx - (sx * w_ratio) : dx,
+      sy < 0 ? dy - (sy * h_ratio) : dy,
+      (x2 - x1) * w_ratio,
+      (y2 - y1) * h_ratio
+    ];
+  }
 }  
