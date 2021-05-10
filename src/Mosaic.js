@@ -3,10 +3,10 @@ import { MyCanvas } from './lib/MyCanvas';
 import CalLiWorker from "./calLiWorker";
 import GreyScaleMaker from "./greyScaleMaker";
 import styles from './Mosaic.module.css';
-import data from './data.json';
+
 
 const MosaicSize = 30;
-const NumOfPixel = 50;
+const NumOfPixel = 80;
 const canvasSize = 800;
 class MosaicInfo{
     constructor(){   
@@ -21,16 +21,14 @@ const Mosaic = React.memo((props)=> {
     let bgImgRef = useRef(null);
     let bgImg = {};
     let images = [];
-    /*fetch("http://52.231.32.202/images", {
+    fetch("https://99-interactions-images.azurewebsites.net/api/HttpTrigger1?code=c42Gx6TYVfDs5EYC1IbSexurK5mhTQU2zRXTo4dwnY5c5Yfcgjm8gw==", {
           method: 'GET',
         }).then(res => res.json())
         .then(json =>{
             images = json.value;
             bgImgRef.current.crossOrigin = "Anonymous";
             bgImgRef.current.src = images[0].thumbnailUrl;
-        });*/
-
-    images = data.value;
+        });
     const preventDefault = e => e.preventDefault();
     let myc = new MyCanvas({
         consts :{
@@ -213,7 +211,7 @@ const Mosaic = React.memo((props)=> {
             myc.context.closePath();
             myc.context.stroke();
 
-            myc.context.globalAlpha = 0.5;
+            myc.context.globalAlpha = 0.2;
             myc.context.drawImage(...MyCanvas.getSafeRect(bgImgRef.current,
                 -res.picPos[0], -res.picPos[1], res.viewportSizeForPic, res.viewportSizeForPic,
                 0,0,canvasSize,canvasSize));
@@ -419,7 +417,7 @@ const Mosaic = React.memo((props)=> {
                 images[e.target.idx].tmpimg = null;
             };
             
-            for(let idx = 0; idx < images.length/4;idx++){                
+            for(let idx = 0; idx < images.length/2;idx++){                
                 let tmpimg = new Image();
                 tmpimg.crossOrigin = "Anonymous";
                 tmpimg.idx = idx;                
@@ -433,8 +431,7 @@ const Mosaic = React.memo((props)=> {
     
     useEffect(() => {
         canvasRef.current.addEventListener('wheel', preventDefault);
-        bgImgRef.current.crossOrigin = "Anonymous";
-        bgImgRef.current.src = images[0].thumbnailUrl;
+        canvasRef.current.addEventListener('touchmove', preventDefault);
         return ()=>{
             originCanvas.delete();
             myc.delete();
@@ -453,28 +450,39 @@ const Mosaic = React.memo((props)=> {
 
     let isMoved = false;
     let prev = [];
-
+    let downpos = [];
     const onmove = (e)=>{
         let x ,y;
         if(e.touches){
-            if(e.touches.length == 1){
-                x = e.touches[0].pageX - canvasRef.current.offsetLeft;
-                y = e.touches[0].pageY - canvasRef.current.offsetTop;
-                e.movementX = x - prev[0];
-                e.movementY = y - prev[1];
+            props.hide();
+            if(prev.length >= 2){
+                let dx = prev[0].pageX - prev[1].pageX;
+                let dy = prev[0].pageY - prev[1].pageY;
+                let midx = (prev[0].pageX + prev[1].pageX)/2- canvasRef.current.offsetLeft;
+                let midy = (prev[0].pageY + prev[1].pageY)/2 - canvasRef.current.offsetTop;
+                let prevDiff = Math.sqrt(dx*dx + dy*dy);
+                for(let i = 0 ; i < e.changedTouches.length;i++){                    
+                    if(prev[0].identifier == e.changedTouches[i].identifier){
+                        prev[0] = e.changedTouches[i];
+                    }else{                        
+                        prev[1] = e.changedTouches[i];  
+                    }                    
+                }
+                dx = prev[0].pageX - prev[1].pageX;
+                dy = prev[0].pageY - prev[1].pageY;
+                let curDiff = Math.sqrt(dx*dx + dy*dy);
+                let diff = curDiff - prevDiff;
+                if(prevDiff){
+                    myc.consts.zoom(midx, midy, diff/canvasRef.current.clientWidth)
+                }    
+                return;
             }else{
-                for (var i = 0; i < prev.length; i++) {
-                    if (e.pointerId == prev[i].pointerId) {
-                        prev[i] = e;
-                        break;
-                    }
-                }
-                  
-                if(e.touches.length > 2){
-                   
-                }
-            }
-            
+                x = e.touches[0].pageX;
+                y = e.touches[0].pageY;
+                e.movementX = x - prev[0].pageX
+                e.movementY = y - prev[0].pageY;
+                prev[0] = e.touches[0];
+            }            
         }else{
             x = e.pageX - canvasRef.current.offsetLeft;
             y = e.pageY - canvasRef.current.offsetTop;
@@ -491,26 +499,27 @@ const Mosaic = React.memo((props)=> {
     }
     const ondown = (e)=>{
         if(e.touches){
-            prev.push(e);            
+            if(prev.length > 2) return;
+
+            prev.push(e.touches[0]);
         }else{
-            prev = [e.clientX, e.clientY];
+            downpos = [e.clientX, e.clientY];
         }        
         myc.vars.canMove = true;
     }
     const onup = (e)=>{
         if(e.touches){
-            for (let i = 0; i < prev.length; i++) {
-                if (prev[i].pointerId == e.pointerId) {
-                  prev.splice(i, 1);
-                  break;
+            prev = [];
+            /*
+            for (var i = 0; i < prev.length; i++) {
+                if (prev[i].identifier == e.changedTouches[0].identifier) {
+                    prev.splice(i, 1);
+                    break;
                 }
-            }
-            if(prev.length <= 0){
-                isMoved = false;
-            }            
+            }     */
         }else{
-            let d = Math.abs(e.clientX-prev[0]);
-            d += Math.abs(e.clientY-prev[1]);
+            let d = e.clientX-downpos[0];
+            d += e.clientY-downpos[1];
             isMoved = !!d;
         }        
         myc.vars.canMove = false;

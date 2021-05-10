@@ -31,11 +31,13 @@ class Main extends React.Component{
   render(){
     return (  
       <>
-        
+        <header>
+          <h1>오늘의 사진은...</h1>
+        </header>
         <div className={styles.container}>
           
           <main>
-            <Mosaic popUp = {this.popUp}/>     
+            <Mosaic popUp = {this.popUp} hide = {this.hide}/>     
           </main>          
           <PopUp imageInfo={this.state.popUpInfo}  hide={this.hide}></PopUp>
         </div>
@@ -49,9 +51,6 @@ class App extends React.Component {
   render(){
     return (  
       <>
-        <header>
-          <h1>오늘의 사진은...</h1>
-        </header>
         <Router>              
           <Switch>
             <Route path='/99-interactions' component={Main} />
