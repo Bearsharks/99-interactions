@@ -60,7 +60,9 @@ class App extends React.Component {
           </Switch>      
         </Router>  
         <footer>
-            <p>contact : iginganza@gmail.com</p>
+          <p>
+            contact : <a href="mailto: iginganza@gmail.com" title="iginganza@gmail.com">iginganza@gmail.com</a>
+          </p>
         </footer> 
       </>      
     );
