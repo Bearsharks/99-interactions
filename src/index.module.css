@@ -5,22 +5,52 @@ body {
 } 
 
 header {
-  position:fixed;
-  left:0px;
-  top:0px;
+  display: flex;
   height:60px;
   width:100%;
-  padding-left: 10px;
   background:#6e869e;
   color: white;
+  align-items: center;
+  justify-content: space-between;
 }
 
 h1 {  
   text-overflow:ellipsis;
+  margin: 10px;
 }
 
 a:link {
-  text-decoration: none; color: white;
+  text-decoration: none;
+}
+
+.noti {
+  width : 40px;
+  height : 40px;
+  margin: 10px;
+  background-image: url('./images/help_black_24dp.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.noti div{
+  opacity: 0;
+  visibility: hidden;
+}
+.noti:hover {
+  background-image: url('./images/help_white_24dp.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.noti:hover div{
+  position:relative;
+  visibility: visible;
+  top:40px;
+  right : 170px;
+  opacity: 1;
+  width : 200px;
+  background-color: rgb(150, 150, 150);
+  transition : all 0.3s ease-in-out;
+  padding: 5px;
 }
 
 footer {

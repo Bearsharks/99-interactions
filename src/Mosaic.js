@@ -6,7 +6,7 @@ import styles from './Mosaic.module.css';
 
 
 const MosaicSize = 30;
-const NumOfPixel = 80;
+const NumOfPixel = 100;
 const canvasSize = 800;
 class MosaicInfo {
     constructor() {
@@ -25,9 +25,10 @@ const Mosaic = React.memo((props) => {
         method: 'GET',
     }).then(res => res.json())
         .then(json => {
-            images = json.value;
+            images = json.imgInfos.value;
             bgImgRef.current.crossOrigin = "Anonymous";
-            bgImgRef.current.src = images[0].thumbnailUrl;
+            bgImgRef.current.src = images[0].thumbnailUrl + "&w=400&h=400&c=7&p=0";
+            props.setTodayPersonMsg(json.todayPerson);
         });
     const preventDefault = e => e.preventDefault();
     let myc = new MyCanvas({
@@ -549,7 +550,7 @@ const Mosaic = React.memo((props) => {
                 onTouchEnd={onup}
             >
                 이 브라우저는 캔버스를 지원하지 않습니다.
-        </canvas>
+            </canvas>
             <canvas className={styles.dispNone} ref={tmpCanvasRef} width="100" height="100">
             </canvas>
             <canvas className={styles.dispNone} ref={originCanvasRef} width="100" height="100">
