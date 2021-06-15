@@ -1,22 +1,15 @@
 body {
-  font: 14px "Helvetica Neue",Helvetica,Arial,sans-serif;
-  margin: 20px;
   background-color: #4B647F;
-} 
-
-header {
-  display: flex;
-  height:60px;
-  width:100%;
-  background:#6e869e;
-  color: white;
-  align-items: center;
-  justify-content: space-between;
+  font-family: sans-serif -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    ;
+  margin: 0px;
 }
+
 
 h1 {  
   text-overflow:ellipsis;
-  margin: 10px;
+  color:  white;
 }
 
 a:link {
@@ -30,6 +23,7 @@ a:link {
   background-image: url('./images/help_black_24dp.svg');
   background-repeat: no-repeat;
   background-size: cover;
+  text-align: left;
 }
 .noti div{
   opacity: 0;
@@ -44,10 +38,9 @@ a:link {
 .noti:hover div{
   position:relative;
   visibility: visible;
-  top:40px;
-  right : 170px;
+  top:30px;
   opacity: 1;
-  width : 200px;
+  width : 250px;
   background-color: rgb(150, 150, 150);
   transition : all 0.3s ease-in-out;
   padding: 5px;
@@ -71,11 +64,19 @@ main {
   margin-left: auto;
   text-align: center;
 }
-
+.photoinfo{
+	display: flex;
+    justify-content: flex-start;
+    align-items: center;
+	padding: 0px 20px;
+}
+.photomosaic{	
+	padding: 25px;
+	padding-top: 0px;
+}
 .container {
   margin-right: auto;
   margin-left: auto;
-  padding-top: 60px;
   width:100%;
   max-width: 1000px;
   min-width: 300px;

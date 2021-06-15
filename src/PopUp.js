@@ -11,28 +11,20 @@ function PopUp(props) {
             height: `${props.imageInfo.popUpSize}px`,
         };
     }
-    debugger;
-    /*{
-      popUpSize : popUpSize,
-      popUpPos : popUpPos,
-      imageId : imageInfo.imageId,
-      name: imageInfo.name,
-      thumbnail: imageInfo.thumbnail,
-      thumbnailUrl: imageInfo.thumbnailUrl,
-      webSearchUrl: imageInfo.webSearchUrl,                        
-    }*/
+
     return (
         <>
             {props.imageInfo &&
-                <div className={styles.line} style={abs} onMouseLeave={props.hide}>
+                <div className={styles.popUpContainer} style={abs} onMouseLeave={props.hide}>
                     <a
                         href={props.imageInfo.webSearchUrl}
                         target='_blank'
                         rel="noreferrer"
                     >
+                        <div className={styles.popUpContainer}>{props.imageInfo.name}</div>
                         <img
-                            className={styles.width100}
-                            src={props.imageInfo.thumbnailUrl + `&w=${props.imageInfo.popUpSize}&h=${props.imageInfo.popUpSize}&c=7`}
+                            className={styles.thumbnailImg}
+                            src={props.imageInfo.thumbnailUrl + `&w=${props.imageInfo.popUpSize}&h=${props.imageInfo.popUpSize - 40}&c=7&p=0`}
                             alt={props.imageInfo.name}
                         />
                     </a>

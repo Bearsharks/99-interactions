@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MyCanvas } from './lib/MyCanvas';
 import CalLiWorker from "./calLiWorker";
 import GreyScaleMaker from "./greyScaleMaker";
@@ -229,7 +229,7 @@ const Mosaic = React.memo((props) => {
                     let imgs = originCanvas.vars.imgs_lightness;
                     let curImage;
                     //이미지를 채울 때 주변에 이미 있는 사진은 제외함   
-                    let candis = new Array();
+                    let candis = [];
                     for (let i in imgs[lightness]) {
                         let imgidx = imgs[lightness][i].imgidx;
                         if (!cur.bannedList.has(imgidx)) {
@@ -257,8 +257,8 @@ const Mosaic = React.memo((props) => {
             nOfSameLightnessImgs: 9,
         },
         vars: {
-            pos_lightness: new Array(256).fill(null).map(() => new Array()),
-            imgs_lightness: new Array(256).fill(null).map(() => new Array()),
+            pos_lightness: new Array(256).fill(null).map(() => []),
+            imgs_lightness: new Array(256).fill(null).map(() => []),
             imgInfo: [],
             isFull: new Array(256).fill(false),
             base: 0,
@@ -463,7 +463,7 @@ const Mosaic = React.memo((props) => {
                 let midy = (prev[0].pageY + prev[1].pageY) / 2 - canvasRef.current.offsetTop;
                 let prevDiff = Math.sqrt(dx * dx + dy * dy);
                 for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (prev[0].identifier == e.changedTouches[i].identifier) {
+                    if (prev[0].identifier === e.changedTouches[i].identifier) {
                         prev[0] = e.changedTouches[i];
                     } else {
                         prev[1] = e.changedTouches[i];
@@ -537,7 +537,7 @@ const Mosaic = React.memo((props) => {
 
     return (
         <>
-            <img className={styles.dispNone} ref={bgImgRef} onLoad={onImageLoaded}></img>
+            <img className={styles.dispNone} ref={bgImgRef} onLoad={onImageLoaded} alt=""></img>
             <canvas className={styles.width100} ref={canvasRef} width={canvasSize} height={canvasSize}
                 onClick={onClickhandler}
                 onWheel={onWheelhandler}

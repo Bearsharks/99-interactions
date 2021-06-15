@@ -39,15 +39,24 @@ class Main extends React.Component {
 		return (
 			<>
 				<header>
-					<h1>오늘의 인물은... {this.state.todayPersonMessage}</h1>
-					<span className={styles.noti + " material-icons-outlined"}>
-						<div><a href="https://www.bigkinds.or.kr/" target='_blank' rel="noreferrer">빅카인즈(Big kinds)</a>에서 제공하는 '오늘의 키워드'의 인물 키워드 중에서 오늘자 뉴스에서 가장 많이 언급된 인물입니다.</div>
-					</span>
+
 				</header>
 				<div className={styles.container}>
-
 					<main>
-						<Mosaic popUp={this.popUp} hide={this.hide} setTodayPersonMsg={this.setTodayPersonMsg} />
+						<div className={styles.photoinfo}>
+							<h1>오늘의 인물은{' - ' + this.state.todayPersonMessage}</h1>
+							<span className={styles.noti + " material-icons-outlined"}>
+								<div>
+									<a href="https://www.bigkinds.or.kr/" target='_blank' rel="noreferrer">
+										빅카인즈(Big kinds)
+									</a>
+									에서 제공하는 '오늘의 키워드'의 인물 키워드 중, 오늘자 뉴스에서 가장 많이 언급된 인물입니다.
+								</div>
+							</span>
+						</div>
+						<div className={styles.photomosaic}>
+							<Mosaic popUp={this.popUp} hide={this.hide} setTodayPersonMsg={this.setTodayPersonMsg} />
+						</div>
 					</main>
 					<PopUp imageInfo={this.state.popUpInfo} hide={this.hide}></PopUp>
 				</div>
@@ -69,11 +78,6 @@ class App extends React.Component {
 						</Route>
 					</Switch>
 				</Router>
-				<footer>
-					<p>
-						contact : <a href="mailto: iginganza@gmail.com" title="iginganza@gmail.com">iginganza@gmail.com</a>
-					</p>
-				</footer>
 			</>
 		);
 	}

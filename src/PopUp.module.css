@@ -6,9 +6,16 @@
     display:none;
 }
 
-.line {
-    border: 1px solid;
+.popUpContainer {
+    background-color: white;
 }
-.width100 {
+
+.popUpContainer div{
+    width: 100%;
+    height:40px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+} 
+.thumbnailImg {
     width : 100%;
 }
