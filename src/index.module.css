@@ -38,10 +38,10 @@ a:link {
 .noti:hover div{
   position:relative;
   visibility: visible;
-  top:30px;
+  top:40px;
   opacity: 1;
   width : 250px;
-  background-color: rgb(150, 150, 150);
+  background-color: #6d7a8a;
   transition : all 0.3s ease-in-out;
   padding: 5px;
 }
