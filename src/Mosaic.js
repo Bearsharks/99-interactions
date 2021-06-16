@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MyCanvas } from './lib/MyCanvas';
 import CalLiWorker from "./calLiWorker";
 import GreyScaleMaker from "./greyScaleMaker";
+import Spinner from './Spinner';
 import styles from './Mosaic.module.css';
 
 
@@ -19,6 +20,7 @@ const Mosaic = React.memo((props) => {
     let originCanvasRef = useRef(null);
     let tmpCanvasRef = useRef(null);
     let bgImgRef = useRef(null);
+    let [isImageLoaded, setImageLoaded] = useState(false);
     let bgImg = {};
     let images = [];
     fetch("https://99-interactions-functions.azurewebsites.net/api/HttpTrigger1?code=gyPykVBnZ5lSl3vwOm3BvEojwZolAbHSuujci28YxApqalzrA2rHfw==", {
@@ -529,6 +531,7 @@ const Mosaic = React.memo((props) => {
         myc.vars.canMove = false;
     }
     const onImageLoaded = (e) => {
+        setImageLoaded(true);
         myc.canRender = false;
         myc.canAnimRun = false;
         originCanvas.renderPicture(originCanvasRef.current);
@@ -537,6 +540,7 @@ const Mosaic = React.memo((props) => {
 
     return (
         <>
+            {!isImageLoaded && <Spinner />}
             <img className={styles.dispNone} ref={bgImgRef} onLoad={onImageLoaded} alt=""></img>
             <canvas className={styles.width100} ref={canvasRef} width={canvasSize} height={canvasSize}
                 onClick={onClickhandler}
