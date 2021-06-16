@@ -12,9 +12,7 @@
 
 .popUpContainer div{
     width: 100%;
-    height:40px;
-    text-overflow: ellipsis;
-    overflow: hidden;
+    height:50px;
 } 
 .thumbnailImg {
     width : 100%;

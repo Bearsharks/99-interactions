@@ -20,11 +20,12 @@ function PopUp(props) {
                         href={props.imageInfo.webSearchUrl}
                         target='_blank'
                         rel="noreferrer"
+                        title={props.imageInfo.name}
                     >
                         <div className={styles.popUpContainer}>{props.imageInfo.name}</div>
                         <img
                             className={styles.thumbnailImg}
-                            src={props.imageInfo.thumbnailUrl + `&w=${props.imageInfo.popUpSize}&h=${props.imageInfo.popUpSize - 40}&c=7&p=0`}
+                            src={props.imageInfo.thumbnailUrl + `&w=${props.imageInfo.popUpSize}&h=${props.imageInfo.popUpSize - 50}&c=7&p=0`}
                             alt={props.imageInfo.name}
                         />
                     </a>
