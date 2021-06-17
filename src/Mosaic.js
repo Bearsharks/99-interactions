@@ -7,7 +7,7 @@ import styles from './Mosaic.module.css';
 
 
 const MosaicSize = 30;
-const NumOfPixel = 120;
+const NumOfPixel = 100;
 const canvasSize = 800;
 class MosaicInfo {
     constructor() {
