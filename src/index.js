@@ -8,10 +8,10 @@ import PopUp from './PopUp'
 class Main extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = { popUpInfo: null, todayPersonMessage: "" };
+		this.state = { popUpInfo: null, todaySong: "" };
 		this.popUp = this.popUp.bind(this);
 		this.hide = this.hide.bind(this);
-		this.setTodayPersonMsg = this.setTodayPersonMsg.bind(this);
+		this.setTodaySong = this.setTodaySong.bind(this);
 	}
 	popUp(popUpInfo) {
 		if (popUpInfo === null) {
@@ -29,9 +29,9 @@ class Main extends React.Component {
 		});
 	}
 
-	setTodayPersonMsg(msg) {
+	setTodaySong(msg) {
 		this.setState({
-			todayPersonMessage: msg
+			todaySong: msg
 		});
 	}
 
@@ -44,18 +44,18 @@ class Main extends React.Component {
 				<div className={styles.container}>
 					<main>
 						<div className={styles.photoinfo}>
-							<h1>오늘의 인물은{' - ' + this.state.todayPersonMessage}</h1>
+							<h1>오늘의 노래{' - ' + this.state.todaySong}</h1>
 							<span className={styles.noti + " material-icons-outlined"}>
 								<div>
-									<a href="https://www.bigkinds.or.kr/" target='_blank' rel="noreferrer">
-										빅카인즈(Big kinds)
+									<a href="https://www.melon.com/chart/day/index.htm" target='_blank' rel="noreferrer">
+										멜론 일간 차트
 									</a>
-									에서 제공하는 '오늘의 키워드'의 인물 키워드 중, 오늘자 뉴스에서 가장 많이 언급된 인물입니다.
+									, 1위
 								</div>
 							</span>
 						</div>
 						<div className={styles.photomosaic}>
-							<Mosaic popUp={this.popUp} hide={this.hide} setTodayPersonMsg={this.setTodayPersonMsg} />
+							<Mosaic popUp={this.popUp} hide={this.hide} setTodaySong={this.setTodaySong} />
 						</div>
 					</main>
 					<PopUp imageInfo={this.state.popUpInfo} hide={this.hide}></PopUp>
