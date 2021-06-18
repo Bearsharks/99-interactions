@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MyCanvas } from './lib/MyCanvas';
 import CalLiWorker from "./calLiWorker";
 import GreyScaleMaker from "./greyScaleMaker";
-import Spinner from './Spinner';
+
 import styles from './Mosaic.module.css';
 
 
 const MosaicSize = 30;
-const NumOfPixel = 100;
+const NumOfPixel = 200;
 const canvasSize = 800;
 class MosaicInfo {
     constructor() {
@@ -15,12 +15,29 @@ class MosaicInfo {
         this.imageIdx = null;
     }
 };
+const shuffle = (array) => {
+    var currentIndex = array.length, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+    }
+
+    return array;
+}
+
 const Mosaic = React.memo((props) => {
     let canvasRef = useRef(null);
     let originCanvasRef = useRef(null);
     let tmpCanvasRef = useRef(null);
     let bgImgRef = useRef(null);
-    let [isImageLoaded, setImageLoaded] = useState(false);
     let bgImg = {};
     let images = [];
     fetch("https://99-interactions-functions.azurewebsites.net/api/HttpTrigger1?code=gyPykVBnZ5lSl3vwOm3BvEojwZolAbHSuujci28YxApqalzrA2rHfw==", {
@@ -243,8 +260,8 @@ const Mosaic = React.memo((props) => {
                     cur.imageIdx = candis[rd][1];
                     curImage = imgs[lightness][candis[rd][0]];
                     //채울때 주변에 이 사진은 쓰지 말라고 표시함
-                    for (let i = -1; i <= 1; i++) {
-                        for (let j = -1; j <= 1; j++) {
+                    for (let i = -2; i <= 2; i++) {
+                        for (let j = -2; j <= 2; j++) {
                             let x = pos[0] + i, y = pos[1] + j;
                             if (mosaicInfo[y] && mosaicInfo[y][x]) {
                                 mosaicInfo[y][x].bannedList.add(cur.imageIdx);
@@ -256,7 +273,65 @@ const Mosaic = React.memo((props) => {
                 originCanvas.vars.imgs_lightness[lightness] = null;
                 originCanvas.vars.pos_lightness[lightness] = null;
             },
+            selectUsableImg: (cur, images) => {
+                for (let info of images) {
+                    let imgidx = info[1];
+                    if (!cur.bannedList.has(imgidx)) {
+                        return info;
+                    }
+                }
+                return null;
+            },
+            drawRemain: () => {
+                for (let lightness = 5; lightness < 240; lightness++) {
+                    let curPosArray = originCanvas.vars.pos_lightness[lightness];
+                    let imgs_lightness = originCanvas.vars.imgs_lightness;
+                    let images = [];
+                    for (let pos of curPosArray) {
+                        let mosaicInfo = originCanvas.vars.mosaicInfo;
+                        let cur = mosaicInfo[pos[1]][pos[0]];
+                        let d = 1;
+                        //images에 있는 것 중 사용 할 수 있는 것이 있다면 선택
+                        //!!!있는것중 랜덤으로 고르게하기
+                        let imageInfo = originCanvas.consts.selectUsableImg(cur, images);
+                        //없으면 사용 할 수 있으며 가장 밝기가 비슷한 이미지를 찾고 같은 밝기로 만들기
+                        while (!imageInfo) {
+                            let candiImageInfo = null;
+                            if (lightness + d < 255) {
+                                candiImageInfo = originCanvas.consts.selectUsableImg(cur, imgs_lightness[lightness + d]);
+                            }
+                            if (!candiImageInfo && lightness - d > 0) {
+                                candiImageInfo = originCanvas.consts.selectUsableImg(cur, imgs_lightness[lightness - d]);
+                            }
+                            if (candiImageInfo) {
+                                imageInfo = [0, candiImageInfo[1]];
+                                if (d < 0) {
+                                    imageInfo[0] = MyCanvas.lightnessMul(candiImageInfo[0], (lightness + d) / lightness);
+                                } else {
+                                    imageInfo[0] = MyCanvas.lightnessAdd(candiImageInfo[0], d);
+                                }
+                                images.push(imageInfo);
+                            }
+                            d++;
+                        }
+
+                        cur.imageIdx = imageInfo[1];
+                        //채울 때 주변에 이 사진은 쓰지 말라고 표시함
+                        for (let i = -1; i <= 1; i++) {
+                            for (let j = -1; j <= 1; j++) {
+                                let x = pos[0] + i, y = pos[1] + j;
+                                if (mosaicInfo[y] && mosaicInfo[y][x]) {
+                                    mosaicInfo[y][x].bannedList.add(cur.imageIdx);
+                                }
+                            }
+                        }
+                        originCanvas.context.putImageData(imageInfo[0], pos[0] * MosaicSize, pos[1] * MosaicSize);
+                    }
+                }
+                originCanvas.vars.imgs_lightness = null;
+            },
             nOfSameLightnessImgs: 9,
+            usingImageSize: 100,
         },
         vars: {
             pos_lightness: new Array(256).fill(null).map(() => []),
@@ -268,6 +343,7 @@ const Mosaic = React.memo((props) => {
             numOfRowPixel: 0,
             mosaicInfo: null,
             renderLightnessCnt: 0,
+            imgLoadCounter: 0,
         },
         init: () => {
             //w, h 중 큰 것을 NumOfPixel개 로 나눠서 base를 구하고 base x base 크기의 정사각형으로 모자이크를 구성한다. 
@@ -321,20 +397,22 @@ const Mosaic = React.memo((props) => {
                     let x = j * MosaicSize;
                     let curPixel = 4 * (i * vars.numOfColPixel + j);
                     let lightness = parseInt((3 * imageData[curPixel] + 4 * imageData[curPixel + 1] + imageData[curPixel + 2]) >>> 3);
-                    lightness = Math.max(0, lightness - 10);
+                    //lightness = Math.max(0, lightness - 10);
                     originCanvas.context.fillStyle = 'rgb(' + lightness + "," + lightness + ',' + lightness + ')';
                     originCanvas.context.fillRect(x, y, MosaicSize, MosaicSize);
                     vars.pos_lightness[lightness].push([j, i]);
                 }
             }
-            //모자이크처리 이미지를 myc에 그리기 시작
+            //원본 모자이크 myc에 그리기 시작
             myc.canAnimRun = true;
             myc.canRender = true;
-            //사진을 하나씩 하나씩 불러오면서 비슷한 밝기에다 추가함
             tmpCanvasRef.current.width = MosaicSize * 2;
             tmpCanvasRef.current.height = MosaicSize * 2;
-
+            for (let i = 0; i < 255; i++) {
+                vars.pos_lightness[i] = shuffle(vars.pos_lightness[i]);
+            }
             const onloadhandler = (e) => {
+                ++originCanvas.vars.imgLoadCounter;
                 tmpctx.drawImage(e.target, 0, 0, MosaicSize * 2, MosaicSize * 2);
                 let imgDatas = [];
                 let idx = e.target.idx;
@@ -344,87 +422,66 @@ const Mosaic = React.memo((props) => {
                     imgDatas.push(tmpctx.getImageData(x, y, MosaicSize, MosaicSize));
                 }
 
-                if (!window.Worker) {
-                    for (let i = 0; i < 4; i++) {
-                        let imageData = MyCanvas.img2greyScale(imgDatas[i]);
-                        let lightness = 0;
-                        let cnt = imageData.data.length / 4;
-                        for (let i = 0; i < imageData.data.length; i += 4) {
-                            lightness += imageData.data[i];
-                        }
-                        lightness = parseInt(lightness / cnt);
+                for (let i = 0; i < 4; i++) {
+                    //회색으로 바꾸고
+                    let imageData = MyCanvas.img2greyScale(imgDatas[i]);
+                    let imgidx = idx + i / 10;
+                    let lightness = 0;
+                    let cnt = imageData.data.length / 4;
+                    for (let i = 0; i < imageData.data.length; i += 4) {
+                        lightness += imageData.data[i];
+                    }
+                    //평균밝기를 구하고
+                    lightness = parseInt(lightness / cnt);
+                    originCanvas.vars.imgs_lightness[lightness].push([imageData, imgidx]);
+                    //같은 밝기를 가진 모자이크조각에다 넣음
+                    let posArr = originCanvas.vars.pos_lightness[lightness];
+                    let curidx = 0;
+                    let last = posArr.length - 1;
+                    while (curidx <= last) {
+                        let pos = posArr[curidx];
+                        let mosaicInfo = originCanvas.vars.mosaicInfo;
+                        let cur = mosaicInfo[pos[1]][pos[0]];
 
-                        for (let d = -20; d <= 10; d++) {
-                            if (lightness + d >= 10 && lightness + d <= 235 && !originCanvas.vars.isFull[lightness + d]) {
-                                if (d < 0) {
-                                    let res = MyCanvas.lightnessMul(imageData, (lightness + d) / lightness);
-                                    res.imgidx = idx + i / 10;
-                                    originCanvas.vars.imgs_lightness[lightness + d].push(res);
-                                } else if (d > 0) {
-                                    let res = MyCanvas.lightnessAdd(imageData, d);
-                                    res.imgidx = idx + i / 10;
-                                    originCanvas.vars.imgs_lightness[lightness + d].push(res);
-                                } else {
-                                    imageData.imgidx = idx + i / 10;
-                                    originCanvas.vars.imgs_lightness[lightness + d].push(imageData);
+                        //이미지를 채울 때 주변에 이미 있다면 넘어감   
+                        if (cur.bannedList.has(imgidx)) {
+                            curidx++;
+                            continue;
+                        }
+                        cur.imageIdx = imgidx;
+                        //채울 때 주변에 이 사진은 쓰지 말라고 표시함
+                        for (let i = -2; i <= 2; i++) {
+                            for (let j = -2; j <= 2; j++) {
+                                let x = pos[0] + i, y = pos[1] + j;
+                                if (mosaicInfo[y] && mosaicInfo[y][x]) {
+                                    mosaicInfo[y][x].bannedList.add(cur.imageIdx);
                                 }
+                            }
+                        }
+                        originCanvas.context.putImageData(imageData, pos[0] * MosaicSize, pos[1] * MosaicSize);
 
-                                let curSize = originCanvas.vars.imgs_lightness[lightness + d].length;
-                                if (curSize >= originCanvas.consts.nOfSameLightnessImgs) {
-                                    originCanvas.vars.isFull[lightness + d] = true;
-                                    originCanvas.consts.renderLightness(lightness + d);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    const calLiWorker = new Worker(CalLiWorker);
-                    const greyScaleMaker = new Worker(GreyScaleMaker);
-                    calLiWorker.onmessage = function (e) {//e에는  
-                        let lightness = e.data[0];
-                        let isComplete = true;
-                        for (let d = -20; d <= 10; d++) {
-                            if (lightness + d >= 5 && lightness + d <= 245) {
-                                originCanvas.vars.isFull[lightness + d]++;
-                                if (originCanvas.vars.isFull[lightness + d] <= originCanvas.consts.nOfSameLightnessImgs) {
-                                    isComplete = false;
-                                }
-                            }
-                        }
-                        if (!isComplete) {
-                            greyScaleMaker.postMessage({
-                                isFull: originCanvas.vars.isFull,
-                                lightness: lightness,
-                                nOfSameLightnessImgs: originCanvas.consts.nOfSameLightnessImgs,
-                                imgData: e.data[1],
-                                imgidx: e.data[2]
-                            });
-                        }
-                    }
-                    greyScaleMaker.onmessage = function (e) {//e에는                        
-                        for (let i = 0; i < e.data.length; i++) {
-                            let lightness = e.data[i][0];
-                            e.data[i][1].imgidx = e.data[i][2];
-                            originCanvas.vars.imgs_lightness[lightness].push(e.data[i][1]);
-                            let curSize = originCanvas.vars.imgs_lightness[lightness].length;
-                            if (curSize >= originCanvas.consts.nOfSameLightnessImgs) {
-                                originCanvas.consts.renderLightness(lightness);
-                            }
-                        }
-                    }
-                    for (let i = 0; i < 4; i++) {
-                        calLiWorker.postMessage([imgDatas[i], idx + i / 10]);
+                        //채워진 모자이크는 지운다.
+                        posArr[curidx] = posArr[last];
+                        last--;
+                        posArr.pop();
                     }
                 }
-                images[e.target.idx].tmpimg.onload = null;
-                images[e.target.idx].tmpimg = null;
+                if (originCanvas.vars.imgLoadCounter === originCanvas.consts.usingImageSize) {
+                    originCanvas.consts.drawRemain()
+                }
             };
-
-            for (let idx = 0; idx < images.length / 2; idx++) {
+            const onerrorhandler = () => {
+                if (originCanvas.vars.imgLoadCounter === originCanvas.consts.usingImageSize) {
+                    originCanvas.consts.drawRemain()
+                }
+            }
+            for (let idx = 0; idx < images.length && idx < originCanvas.consts.usingImageSize; idx++) {
                 let tmpimg = new Image();
                 tmpimg.crossOrigin = "Anonymous";
                 tmpimg.idx = idx;
-                tmpimg.addEventListener("load", onloadhandler, { once: true });
+                //tmpimg.addEventListener("load", onloadhandler, { once: true });
+                tmpimg.onload = onloadhandler;
+                tmpimg.onerror = onerrorhandler;
                 tmpimg.src = images[idx].thumbnailUrl + "&w=100&h=100&c=7";
                 images[idx].tmpimg = tmpimg;
             }
@@ -531,7 +588,7 @@ const Mosaic = React.memo((props) => {
         myc.vars.canMove = false;
     }
     const onImageLoaded = (e) => {
-        setImageLoaded(true);
+        props.setImageLoaded(true);
         myc.canRender = false;
         myc.canAnimRun = false;
         originCanvas.renderPicture(originCanvasRef.current);
@@ -540,8 +597,13 @@ const Mosaic = React.memo((props) => {
 
     return (
         <>
-            {!isImageLoaded && <Spinner />}
-            <img className={styles.dispNone} ref={bgImgRef} onLoad={onImageLoaded} alt=""></img>
+
+            <img
+                className={styles.dispNone}
+                ref={bgImgRef}
+                onLoad={onImageLoaded}
+                alt=""
+            ></img>
             <canvas className={styles.width100} ref={canvasRef} width={canvasSize} height={canvasSize}
                 onClick={onClickhandler}
                 onWheel={onWheelhandler}

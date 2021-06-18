@@ -63,6 +63,8 @@ main {
   margin-right: auto;
   margin-left: auto;
   text-align: center;
+  max-width: 800px;
+  min-width: 400px;
 }
 .photoinfo{
 	display: flex;
@@ -75,11 +77,11 @@ main {
 	padding-top: 0px;
 }
 .container {
-  margin-right: auto;
-  margin-left: auto;
-  width:100%;
-  max-width: 1000px;
-  min-width: 300px;
+  	margin-right: auto;
+ 	margin-left: auto;
+	width:100%;
+	max-width: 1000px;
+	min-width: 300px;
 }
 
 .linkActive{

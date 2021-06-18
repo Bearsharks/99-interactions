@@ -4,14 +4,16 @@ import { BrowserRouter as Router, Route, NavLink, Link, Switch } from "react-rou
 import styles from './index.module.css';
 import Mosaic from './Mosaic'
 import PopUp from './PopUp'
+import Spinner from './Spinner';
 
 class Main extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = { popUpInfo: null, todaySong: "" };
+		this.state = { popUpInfo: null, todaySong: "", imageLoaded: false };
 		this.popUp = this.popUp.bind(this);
 		this.hide = this.hide.bind(this);
 		this.setTodaySong = this.setTodaySong.bind(this);
+		this.setImageLoaded = this.setImageLoaded.bind(this);
 	}
 	popUp(popUpInfo) {
 		if (popUpInfo === null) {
@@ -34,6 +36,11 @@ class Main extends React.Component {
 			todaySong: msg
 		});
 	}
+	setImageLoaded(msg) {
+		this.setState({
+			imageLoaded: msg
+		});
+	}
 
 	render() {
 		return (
@@ -44,7 +51,6 @@ class Main extends React.Component {
 				<div className={styles.container}>
 					<main>
 						<div className={styles.photoinfo}>
-							<h1>오늘의 노래{' - ' + this.state.todaySong}</h1>
 							<span className={styles.noti + " material-icons-outlined"}>
 								<div>
 									<a href="https://www.melon.com/chart/day/index.htm" target='_blank' rel="noreferrer">
@@ -53,9 +59,12 @@ class Main extends React.Component {
 									, 1위
 								</div>
 							</span>
+							<h1>{this.state.todaySong}</h1>
+
 						</div>
 						<div className={styles.photomosaic}>
-							<Mosaic popUp={this.popUp} hide={this.hide} setTodaySong={this.setTodaySong} />
+							{!this.state.imageLoaded && <Spinner />}
+							<Mosaic popUp={this.popUp} hide={this.hide} setTodaySong={this.setTodaySong} setImageLoaded={this.setImageLoaded} />
 						</div>
 					</main>
 					<PopUp imageInfo={this.state.popUpInfo} hide={this.hide}></PopUp>
