@@ -6,7 +6,7 @@ import styles from './Mosaic.module.css';
 
 
 const MosaicSize = 30;
-const NumOfPixel = 200;
+const NumOfPixel = 150;
 const canvasSize = 800;
 class MosaicInfo {
     constructor() {
@@ -37,7 +37,7 @@ const Mosaic = React.memo((props) => {
         .then(json => {
             images = json.imgInfos.value;
             bgImgRef.current.crossOrigin = "Anonymous";
-            bgImgRef.current.src = images[0].thumbnailUrl + "";
+            bgImgRef.current.src = images[0].thumbnailUrl + "&w=400&h=300&c=7&p=0";
             props.setTodaySong(json.todaySong);
         });
     const preventDefault = e => e.preventDefault();
