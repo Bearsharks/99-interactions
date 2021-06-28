@@ -267,10 +267,10 @@ const Mosaic = React.memo((props) => {
                             }
                             if (candiImageInfo) {
                                 imageInfo = [0, candiImageInfo[1]];
-                                if (d < 0) {
-                                    imageInfo[0] = MyCanvas.lightnessMul(candiImageInfo[0], (lightness + d) / lightness);
+                                if (d > 0) {
+                                    imageInfo[0] = MyCanvas.lightnessMul(candiImageInfo[0], lightness / (lightness + d));
                                 } else {
-                                    imageInfo[0] = MyCanvas.lightnessAdd(candiImageInfo[0], d);
+                                    imageInfo[0] = MyCanvas.lightnessAdd(candiImageInfo[0], -d);
                                 }
                                 images.push(imageInfo);
                             }
