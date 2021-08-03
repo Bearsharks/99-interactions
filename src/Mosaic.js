@@ -5,7 +5,7 @@ import GreyScaleMaker from "./greyScaleMaker";
 import styles from './Mosaic.module.css';
 
 
-const MosaicSize = 30;
+const MosaicSize = 100;
 const NumOfPixel = 150;
 const canvasSize = 800;
 class MosaicInfo {
@@ -33,11 +33,11 @@ const Mosaic = React.memo((props) => {
     let images = [];
     fetch("https://99-interactions-functions.azurewebsites.net/api/HttpTrigger1?code=gyPykVBnZ5lSl3vwOm3BvEojwZolAbHSuujci28YxApqalzrA2rHfw==", {
         method: 'GET',
-    }).then(res => res.json())
+    }).then(res => res.body.json())
         .then(json => {
             images = json.imgInfos.value;
             bgImgRef.current.crossOrigin = "Anonymous";
-            bgImgRef.current.src = images[0].thumbnailUrl + "&w=450&h=300&c=7&p=0";
+            bgImgRef.current.src = images[0].thumbnailUrl + "&c=7&p=0";
             props.setTodaySong(json.todaySong);
         });
     const preventDefault = e => e.preventDefault();
