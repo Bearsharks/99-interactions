@@ -5,8 +5,8 @@ import GreyScaleMaker from "./greyScaleMaker";
 import styles from './Mosaic.module.css';
 
 
-const MosaicSize = 100;
-const NumOfPixel = 150;
+const MosaicSize = 50;
+const NumOfPixel = 170;
 const canvasSize = 800;
 class MosaicInfo {
     constructor() {
@@ -33,7 +33,9 @@ const Mosaic = React.memo((props) => {
     let images = [];
     fetch("https://99-interactions-functions.azurewebsites.net/api/HttpTrigger1?code=gyPykVBnZ5lSl3vwOm3BvEojwZolAbHSuujci28YxApqalzrA2rHfw==", {
         method: 'GET',
-    }).then(res => res.body.json())
+    }).then(res =>
+        res.json()
+    )
         .then(json => {
             images = json.imgInfos.value;
             bgImgRef.current.crossOrigin = "Anonymous";
