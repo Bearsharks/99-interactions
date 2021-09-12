@@ -5,8 +5,8 @@ import GreyScaleMaker from "./greyScaleMaker";
 import styles from './Mosaic.module.css';
 
 
-const MosaicSize = 50;
-const NumOfPixel = 170;
+const MosaicSize = 30;
+const NumOfPixel = 100;
 const canvasSize = 800;
 class MosaicInfo {
     constructor() {
