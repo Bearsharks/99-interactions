@@ -1,6 +1,6 @@
 import { MOSAIC_SIZE, NUM_OF_PIXELS } from './lib/consts'
-import mosaicMaker from './MosaicMaker'
 import { ImageInfo } from './Types/Types';
+import * as mosaicMaker from "file-loader?name=[name].js!./MosaicMaker.worker.ts";// eslint-disable-line import/no-webpack-loader-syntax
 
 export default class MosaicCanvas {
     width: number;
@@ -27,7 +27,7 @@ export default class MosaicCanvas {
         canvas.width = this.numOfColPixel * MOSAIC_SIZE;
         canvas.height = this.numOfRowPixel * MOSAIC_SIZE;
         const offscreen: OffscreenCanvas = canvas.transferControlToOffscreen();
-        const worker = new Worker(mosaicMaker);
+        const worker: Worker = new Worker(mosaicMaker);
         worker.postMessage({ canvas: offscreen, imageInfos: imageInfos }, [offscreen]);
     }
 }
