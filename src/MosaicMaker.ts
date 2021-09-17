@@ -138,43 +138,38 @@ async function doIt(data) {
         for (let lightness = 5; lightness < 245; lightness++) {
             let curPosArray: Coord[] = position_lightness[lightness];
 
-            let usableImages: ImageData[] = [];
-            let usableImageIdxs: number[] = [];
+            let usableImages: Map<number, ImageData> = new Map<number, ImageData>();
             for (let pos of curPosArray) {
                 let curPieceInfo: MosaicPieceInfo = mosaicPieceInfos[pos.r][pos.c];
 
                 //usableImages에서 사용할 수 있는 것을 선택
-                let imageIdx: number = selectUsableImg(curPieceInfo, usableImageIdxs);
-                let usableImage: ImageData;
-                if (imageIdx) {
-                    usableImage = usableImages[imageIdx];
-                } else {
-                    let d = 0;
-                    while (!imageIdx) {
-                        d++;
-                        if (lightness + d < 255) {
-                            imageIdx = selectUsableImg(curPieceInfo, img_lightness[lightness + d]);
-                        }
-                        if (!imageIdx && lightness - d > 0) {
-                            imageIdx = selectUsableImg(curPieceInfo, img_lightness[lightness - d]);
-                        }
+                let imageIdx: number = selectUsableImg(curPieceInfo, Array.from(usableImages.keys()));
+                let d = 0;
+                while (!imageIdx) {
+                    d++;
+                    if (lightness + d < 255) {
+                        imageIdx = selectUsableImg(curPieceInfo, img_lightness[lightness + d]);
                     }
-                    usableImage = (d > 0) ? lightnessMul(imageDatas[imageIdx], lightness / (lightness + d)) :
-                        lightnessAdd(imageDatas[imageIdx], -d);
-                    usableImages.push(usableImage);
-                    usableImageIdxs.push(imageIdx);
+                    if (!imageIdx && lightness - d > 0) {
+                        imageIdx = selectUsableImg(curPieceInfo, img_lightness[lightness - d]);
+                    }
+                    if (imageIdx) {
+                        const usableImage: ImageData = (d > 0) ? lightnessMul(imageDatas[imageIdx], lightness / (lightness + d)) :
+                            lightnessAdd(imageDatas[imageIdx], -d);
+                        usableImages.set(imageIdx, usableImage);
+                    }
                 }
 
-                ctx.putImageData(usableImage, pos.r * MOSAIC_SIZE, pos.c * MOSAIC_SIZE);
+                ctx.putImageData(usableImages.get(imageIdx), pos.c * MOSAIC_SIZE, pos.r * MOSAIC_SIZE);
                 curPieceInfo.imageIdx = imageIdx;
 
 
                 //주변에 이 사진은 쓰지 말라고 표시함
-                for (let i = -1; i <= 1; i++) {
-                    for (let j = -1; j <= 1; j++) {
-                        let x = pos[0] + i, y = pos[1] + j;
-                        if (mosaicPieceInfos[y] && mosaicPieceInfos[y][x]) {
-                            mosaicPieceInfos[y][x].bannedList.add(imageIdx);
+                for (let a = -2; a <= 2; a++) {
+                    for (let b = -2; b <= 2; b++) {
+                        let r: number = pos.r + a, c: number = pos.c + b;
+                        if (mosaicPieceInfos[r] && mosaicPieceInfos[r][c]) {
+                            mosaicPieceInfos[r][c].bannedList.add(imageIdx);
                         }
                     }
                 }
@@ -183,7 +178,7 @@ async function doIt(data) {
     }
     async function renderMosaicPiece(url, imgidx) {
         //이미지를 불러와서
-        const img: ImageBitmap = await getImage(url + "&w=100&h=100&c=7");
+        const img: ImageBitmap = await getImage(url);
         if (img) {
             tmpCtx.drawImage(img, 0, 0, 2 * MOSAIC_SIZE, 2 * MOSAIC_SIZE);
             //4등분한 각각의 데이터와 평균 밝기값 계산 후 같은 밝기의 조각에 그린다.
@@ -206,21 +201,24 @@ async function doIt(data) {
                     let pos: Coord = coords[curPos];
                     let cur = mosaicPieceInfos[pos.r][pos.c];
                     //이미지를 채울 때 주변에 이미 있다면 넘어감
-                    if (cur.bannedList.has(imgidx)) continue;
+                    if (cur.bannedList.has(imgidx)) {
+                        curPos++;
+                        continue;
+                    }
                     cur.imageIdx = imgidx;
                     //채울 때 주변에 이 사진은 쓰지 말라고 표시함
-                    for (let a = -1; a <= 1; a++) {
-                        for (let b = -1; b <= 1; b++) {
+                    for (let a = -2; a <= 2; a++) {
+                        for (let b = -2; b <= 2; b++) {
                             let r: number = pos.r + a, c: number = pos.c + b;
                             if (mosaicPieceInfos[r] && mosaicPieceInfos[r][c]) {
                                 mosaicPieceInfos[r][c].bannedList.add(imgidx);
                             }
                         }
                     }
-                    ctx.putImageData(imgData, pos.r * MOSAIC_SIZE, pos.c * MOSAIC_SIZE);
+                    ctx.putImageData(imgData, pos.c * MOSAIC_SIZE, pos.r * MOSAIC_SIZE);
                     //채워진 모자이크는 지운다.
-                    coords[i] = coords[coords.length - 1];
-                    i++;
+                    coords[curPos] = coords[coords.length - 1];
+                    curPos++;
                     last--;
                     coords.pop();
                 }
@@ -233,7 +231,7 @@ async function doIt(data) {
         }
     }
     for (let i = 0; i < totalImageNum; i++) {
-        renderMosaicPiece(imageInfos[i].thumbnailUrl, i);
+        renderMosaicPiece(imageInfos[i].thumbnailUrl + "&w=100&h=100&c=7", i);
     }
 }
 const worker = {
