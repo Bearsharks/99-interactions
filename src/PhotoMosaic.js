@@ -5,6 +5,7 @@ import { canvasSize } from './refs/consts'
 function PhotoMosaic(props) {
     let canvasRef = useRef(null);
     let mycRef = useRef(null);
+    let tmpCanvasRef = useRef(null);
     let mosaicCanvas = useRef(null);
     let context = null;
     const render = () => {
@@ -16,7 +17,7 @@ function PhotoMosaic(props) {
         }
     }
     useEffect(() => {
-        mosaicCanvas.current = new MosaicCanvas(props.imageInfos, canvasRef.current);
+        mosaicCanvas.current = new MosaicCanvas(props.imageInfos, canvasRef.current, tmpCanvasRef.current);
         context = mycRef.current.getContext("2d");
         requestAnimationFrame(render);
         return () => {
@@ -27,6 +28,8 @@ function PhotoMosaic(props) {
     return (
         <>
             <canvas className={styles.dispNone} ref={canvasRef} width={props.width} height={props.height}>
+            </canvas>
+            <canvas ref={tmpCanvasRef}>
             </canvas>
             <canvas ref={mycRef} width={props.width} height={props.height}>
             </canvas>

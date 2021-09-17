@@ -5,3 +5,7 @@ export type ImageInfo = {
     height: number,
     thumbnail: any,
 }
+export type Coord = {
+    r: number,
+    c: number
+}
