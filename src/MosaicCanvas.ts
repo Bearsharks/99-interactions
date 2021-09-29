@@ -25,8 +25,10 @@ export default class MosaicCanvas {
             w = this.numOfColPixel * this.base;
             this.numOfRowPixel = NUM_OF_PIXELS;
         }
-        canvas.width = this.numOfColPixel * MOSAIC_SIZE;
-        canvas.height = this.numOfRowPixel * MOSAIC_SIZE;
+        this.width = this.numOfColPixel * MOSAIC_SIZE;
+        this.height = this.numOfRowPixel * MOSAIC_SIZE;
+        canvas.width = this.width;
+        canvas.height = this.height;
 
         tmpCanvas.width = Math.max(this.numOfColPixel, MOSAIC_SIZE * 2);
         tmpCanvas.height = Math.max(this.numOfRowPixel, MOSAIC_SIZE * 2);

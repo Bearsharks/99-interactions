@@ -1,47 +1,21 @@
 import React, { useEffect, useRef } from 'react';
-import { MyCanvas } from './lib/MyCanvas';
-import GreyScaleMaker from "./greyScaleMaker";
-
-import styles from './Mosaic.module.css';
+import { MyCanvas } from './refs/MyCanvas';
+import MosaicCanvas from './MosaicCanvas.ts'
+import styles from './PhotoMosaic.module.scss';
+import { isObjectBindingPattern } from 'typescript';
 
 
 const MosaicSize = 50;
-const NumOfPixel = 170;
 const canvasSize = 800;
-class MosaicInfo {
-    constructor() {
-        this.bannedList = new Set();
-        this.imageIdx = null;
-    }
-};
-const shuffle = (array) => {
-    var currentIndex = array.length, randomIndex;
-    while (0 !== currentIndex) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-    }
-    return array;
-}
 
 const Mosaic = React.memo((props) => {
     let canvasRef = useRef(null);
     let originCanvasRef = useRef(null);
+    let originCanvas = useRef(null);
     let tmpCanvasRef = useRef(null);
     let bgImgRef = useRef(null);
     let bgImg = {};
     let images = [];
-    fetch("https://99-interactions-functions.azurewebsites.net/api/HttpTrigger1?code=gyPykVBnZ5lSl3vwOm3BvEojwZolAbHSuujci28YxApqalzrA2rHfw==", {
-        method: 'GET',
-    }).then(res =>
-        res.json()
-    )
-        .then(json => {
-            images = json.imgInfos.value;
-            bgImgRef.current.crossOrigin = "Anonymous";
-            bgImgRef.current.src = images[0].thumbnailUrl + "&c=7&p=0";
-            props.setTodaySong(json.todaySong);
-        });
     const preventDefault = e => e.preventDefault();
     let myc = new MyCanvas({
         consts: {
@@ -79,10 +53,11 @@ const Mosaic = React.memo((props) => {
                 return [idxC, idxR];
             },
             click: (posX, posY) => {
+                return;
                 let x = myc.vars.curHoveredPos[0];
                 let y = myc.vars.curHoveredPos[1];
-                if (0 <= x && x < originCanvas.vars.numOfColPixel && 0 <= y && y < originCanvas.vars.numOfRowPixel
-                    && originCanvas.vars.mosaicInfo[y][x].imageIdx !== null) {
+                if (0 <= x && x < originCanvas.current.numOfColPixel && 0 <= y && y < originCanvas.current.numOfRowPixel
+                    && originCanvas.current.mosaicInfo[y][x].imageIdx !== null) {
                     //현재 마우스 포인터가 캔버스 기준으로
                     //현재 인덱스는 캔버스 기준으로 바꾸면 좌상단이 몇몇인가?
                     let viewportSize = myc.vars.originSize / myc.vars.zoomScale;
@@ -124,9 +99,10 @@ const Mosaic = React.memo((props) => {
                 }
             },
             emp: (posX, posY) => {
+                if (!originCanvas.current) return;
                 let pos = myc.consts.posToIdx(posX, posY);
-                if (0 <= pos[0] && pos[0] < originCanvas.vars.numOfColPixel
-                    && 0 <= pos[1] && pos[1] < originCanvas.vars.numOfRowPixel) {
+                if (0 <= pos[0] && pos[0] < originCanvas.current.numOfColPixel
+                    && 0 <= pos[1] && pos[1] < originCanvas.current.numOfRowPixel) {
                     myc.vars.curHoveredPos = pos;
                 } else {
                     myc.vars.curHoveredPos = [-100, -100];
@@ -174,9 +150,9 @@ const Mosaic = React.memo((props) => {
             radioOfPic: 1,
         },
         init: () => {
-            myc.vars.originSize = originCanvas.canvas.width > originCanvas.canvas.height ? originCanvas.canvas.width : originCanvas.canvas.height;
-            myc.vars.ratioW = originCanvas.canvas.width / myc.vars.originSize;
-            myc.vars.ratioH = originCanvas.canvas.height / myc.vars.originSize;
+            myc.vars.originSize = originCanvas.current.width > originCanvas.current.height ? originCanvas.current.width : originCanvas.current.height;
+            myc.vars.ratioW = originCanvas.current.width / myc.vars.originSize;
+            myc.vars.ratioH = originCanvas.current.height / myc.vars.originSize;
             myc.vars.pos[0] = myc.vars.originSize * (1 - myc.vars.ratioW) / 2;
             myc.vars.pos[1] = myc.vars.originSize * (1 - myc.vars.ratioH) / 2;
             myc.vars.pos[2] = myc.vars.pos[0] + myc.vars.originSize * myc.vars.ratioW;
@@ -213,7 +189,7 @@ const Mosaic = React.memo((props) => {
         render: () => {
             //그리기
             let res = myc.simulResult;
-            myc.context.drawImage(...MyCanvas.getSafeRect(originCanvas.canvas,
+            myc.context.drawImage(...MyCanvas.getSafeRect(originCanvasRef.current,
                 -res.pos[0], -res.pos[1], res.viewportSize, res.viewportSize,
                 0, 0, canvasSize, canvasSize));
             myc.context.beginPath();
@@ -223,7 +199,6 @@ const Mosaic = React.memo((props) => {
             myc.context.lineTo(res.hoveredPos[0], res.hoveredPos[1] + res.hoverLineSize);
             myc.context.closePath();
             myc.context.stroke();
-
             myc.context.globalAlpha = 0.25;
             myc.context.drawImage(...MyCanvas.getSafeRect(bgImgRef.current,
                 -res.picPos[0], -res.picPos[1], res.viewportSizeForPic, res.viewportSizeForPic,
@@ -232,228 +207,18 @@ const Mosaic = React.memo((props) => {
         },
     });
 
-    let originCanvas = new MyCanvas({
-        consts: {
-            selectUsableImg: (cur, images) => {
-                //사용가능한 이미지를 랜덤하게 고른다
-                let candis = [];
-                for (let i in images) {
-                    let imgidx = images[i][1];
-                    if (!cur.bannedList.has(imgidx)) {
-                        candis.push(i);
-                    }
-                }
-                if (candis.length === 0) return null;
-                let randomIndex = Math.floor(Math.random() * candis.length);
-                return images[candis[randomIndex]];
-            },
-            drawRemain: () => {
-                for (let lightness = 5; lightness < 245; lightness++) {
-                    let curPosArray = originCanvas.vars.pos_lightness[lightness];
-                    let imgs_lightness = originCanvas.vars.imgs_lightness;
-                    let images = [];
-                    for (let pos of curPosArray) {
-                        let mosaicInfo = originCanvas.vars.mosaicInfo;
-                        let cur = mosaicInfo[pos[1]][pos[0]];
-                        let d = 1;
-                        //images에 있는 것 중 사용 할 수 있는 것이 있다면 선택
-                        let imageInfo = originCanvas.consts.selectUsableImg(cur, images);
-                        //없으면 사용가능하며, 가장 밝기가 비슷한 이미지를 찾고 같은 밝기로 만들기
-                        while (!imageInfo) {
-                            let candiImageInfo = null;
-                            if (lightness + d < 255) {
-                                candiImageInfo = originCanvas.consts.selectUsableImg(cur, imgs_lightness[lightness + d]);
-                            }
-                            if (!candiImageInfo && lightness - d > 0) {
-                                candiImageInfo = originCanvas.consts.selectUsableImg(cur, imgs_lightness[lightness - d]);
-                            }
-                            if (candiImageInfo) {
-                                imageInfo = [0, candiImageInfo[1]];
-                                if (d > 0) {
-                                    imageInfo[0] = MyCanvas.lightnessMul(candiImageInfo[0], lightness / (lightness + d));
-                                } else {
-                                    imageInfo[0] = MyCanvas.lightnessAdd(candiImageInfo[0], -d);
-                                }
-                                images.push(imageInfo);
-                            }
-                            d++;
-                        }
-
-                        cur.imageIdx = imageInfo[1];
-                        originCanvas.context.putImageData(imageInfo[0], pos[0] * MosaicSize, pos[1] * MosaicSize);
-
-                        //주변에 이 사진은 쓰지 말라고 표시함
-                        for (let i = -2; i <= 2; i++) {
-                            for (let j = -2; j <= 2; j++) {
-                                let x = pos[0] + i, y = pos[1] + j;
-                                if (mosaicInfo[y] && mosaicInfo[y][x]) {
-                                    mosaicInfo[y][x].bannedList.add(cur.imageIdx);
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            usingImageSize: 100,
-        },
-        vars: {
-            pos_lightness: new Array(256).fill(null).map(() => []),
-            imgs_lightness: new Array(256).fill(null).map(() => []),
-            base: 0,
-            numOfColPixel: 0,
-            numOfRowPixel: 0,
-            mosaicInfo: null,
-            imgLoadCounter: 0,
-        },
-        init: () => {
-            //w, h 중 큰 것을 NumOfPixel개 로 나눠서 base를 구하고 base x base 크기의 정사각형으로 모자이크를 구성한다. 
-            originCanvas.context.strokeStyle = 'rgba(0, 0, 0, 0)';
-            let w = bgImgRef.current.width;
-            let h = bgImgRef.current.height;
-            let base, numOfRowPixel, numOfColPixel;
-            if (w >= h) {
-                base = w / NumOfPixel;
-                numOfRowPixel = parseInt(h / base);
-                h = numOfRowPixel * base;
-                numOfColPixel = NumOfPixel;
-            } else {
-                base = h / NumOfPixel;
-                numOfColPixel = parseInt(w / base);
-                w = numOfColPixel * base;
-                numOfRowPixel = NumOfPixel;
-            }
-
-            originCanvas.vars.mosaicInfo = new Array(numOfRowPixel);
-            for (var i = 0; i < numOfRowPixel; i++) {
-                originCanvas.vars.mosaicInfo[i] = new Array(numOfColPixel).fill(null).map(() => new MosaicInfo());
-            }
-            //배경 이미지 로드 및 관련 정보 초기화
-            bgImg.renderedW = w;
-            bgImg.renderedH = h;
-            bgImg.zeroX = (bgImgRef.current.width - bgImg.renderedW) / 2;
-            bgImg.zeroY = (bgImgRef.current.height - bgImg.renderedH) / 2;
-            bgImg.renderedPixel = w > h ? w : h;
-            //drawImage를 활용 해상도를 기준 크기까지 줄임
-            tmpCanvasRef.current.width = numOfColPixel;
-            tmpCanvasRef.current.height = numOfRowPixel;
-            let tmpctx = tmpCanvasRef.current.getContext('2d');
-            tmpctx.drawImage(bgImgRef.current, bgImg.zeroX, bgImg.zeroY, bgImg.renderedW, bgImg.renderedH,
-                0, 0, numOfColPixel, numOfRowPixel);
-
-            originCanvas.vars.base = base;
-            originCanvas.vars.numOfColPixel = numOfColPixel;
-            originCanvas.vars.numOfRowPixel = numOfRowPixel;
-            originCanvas.canvas.width = numOfColPixel * MosaicSize;
-            originCanvas.canvas.height = numOfRowPixel * MosaicSize;
-        },
-        render: () => {
-            let vars = originCanvas.vars;
-            //돌면서 색상 채우고, 색상정보를 저장함
-            let tmpctx = tmpCanvasRef.current.getContext('2d');
-            let imageData = tmpctx.getImageData(0, 0, vars.numOfColPixel, vars.numOfRowPixel).data;
-            for (let i = 0; i < vars.numOfRowPixel; i++) {
-                for (let j = 0; j < vars.numOfColPixel; j++) {
-                    let y = i * MosaicSize;
-                    let x = j * MosaicSize;
-                    let curPixel = 4 * (i * vars.numOfColPixel + j);
-                    let lightness = parseInt((3 * imageData[curPixel] + 4 * imageData[curPixel + 1] + imageData[curPixel + 2]) >>> 3);
-                    //lightness = Math.max(0, lightness - 10);
-                    originCanvas.context.fillStyle = 'rgb(' + lightness + "," + lightness + ',' + lightness + ')';
-                    originCanvas.context.fillRect(x, y, MosaicSize, MosaicSize);
-                    vars.pos_lightness[lightness].push([j, i]);
-                }
-            }
-            //원본 모자이크 myc에 그리기 시작
-            myc.canAnimRun = true;
-            myc.canRender = true;
-            tmpCanvasRef.current.width = MosaicSize * 2;
-            tmpCanvasRef.current.height = MosaicSize * 2;
-            for (let i = 0; i < 255; i++) {
-                vars.pos_lightness[i] = shuffle(vars.pos_lightness[i]);
-            }
-            const onloadhandler = (e) => {
-                tmpctx.drawImage(e.target, 0, 0, MosaicSize * 2, MosaicSize * 2);
-                let imgDatas = [];
-                let idx = e.target.idx;
-                for (let i = 0; i < 4; i++) {
-                    let x = (i % 2 * MosaicSize);
-                    let y = Math.floor(i / 2) * MosaicSize;
-                    imgDatas.push(tmpctx.getImageData(x, y, MosaicSize, MosaicSize));
-                }
-
-                const greyScaleMaker = new Worker(GreyScaleMaker);
-                greyScaleMaker.onmessage = (e) => {
-                    let lightness = e.data.lightness;
-                    let imgidx = e.data.imgidx;
-                    let imageData = e.data.imageData;
-                    originCanvas.vars.imgs_lightness[lightness].push([imageData, imgidx]);
-
-                    //같은 밝기를 가진 모자이크조각에다 넣음
-                    let posArr = originCanvas.vars.pos_lightness[lightness];
-                    let curidx = 0;
-                    let last = posArr.length - 1;
-                    while (curidx <= last) {
-                        let pos = posArr[curidx];
-                        let mosaicInfo = originCanvas.vars.mosaicInfo;
-                        let cur = mosaicInfo[pos[1]][pos[0]];
-
-                        //이미지를 채울 때 주변에 이미 있다면 넘어감   
-                        if (cur.bannedList.has(imgidx)) {
-                            curidx++;
-                            continue;
-                        }
-                        cur.imageIdx = imgidx;
-                        //채울 때 주변에 이 사진은 쓰지 말라고 표시함
-                        for (let i = -2; i <= 2; i++) {
-                            for (let j = -2; j <= 2; j++) {
-                                let x = pos[0] + i, y = pos[1] + j;
-                                if (mosaicInfo[y] && mosaicInfo[y][x]) {
-                                    mosaicInfo[y][x].bannedList.add(cur.imageIdx);
-                                }
-                            }
-                        }
-                        originCanvas.context.putImageData(imageData, pos[0] * MosaicSize, pos[1] * MosaicSize);
-
-                        //채워진 모자이크는 지운다.
-                        posArr[curidx] = posArr[last];
-                        curidx++;
-                        last--;
-                        posArr.pop();
-                    }
-                    ++originCanvas.vars.imgLoadCounter;
-                    if (originCanvas.vars.imgLoadCounter >= originCanvas.consts.usingImageSize * 4) {
-                        originCanvas.consts.drawRemain();
-                    }
-                }
-                for (let i = 0; i < 4; i++) {
-                    greyScaleMaker.postMessage({ imagedata: imgDatas[i], imgidx: idx + i / 10 });
-                }
-            };
-            const onerrorhandler = () => {
-                originCanvas.vars.imgLoadCounter += 4;
-                if (originCanvas.vars.imgLoadCounter >= originCanvas.consts.usingImageSize * 4) {
-                    originCanvas.consts.drawRemain();
-                }
-            }
-            for (let idx = 0; idx < images.length && idx < originCanvas.consts.usingImageSize; idx++) {
-                let tmpimg = new Image();
-                tmpimg.crossOrigin = "Anonymous";
-                tmpimg.idx = idx;
-                //tmpimg.addEventListener("load", onloadhandler, { once: true });
-                tmpimg.onload = onloadhandler;
-                tmpimg.onerror = onerrorhandler;
-                tmpimg.src = images[idx].thumbnailUrl + "&w=100&h=100&c=7";
-                images[idx].tmpimg = tmpimg;
-            }
-            //정보 보여주는 팝업창을 띄우기
-        },
-    });
-
     useEffect(() => {
         canvasRef.current.addEventListener('wheel', preventDefault);
         canvasRef.current.addEventListener('touchmove', preventDefault);
+        fetch("https://99-interactions-functions.azurewebsites.net/api/HttpTrigger1?code=gyPykVBnZ5lSl3vwOm3BvEojwZolAbHSuujci28YxApqalzrA2rHfw==", {
+            method: 'GET',
+        }).then(res => res.json()
+        ).then(json => {
+            originCanvas.current = new MosaicCanvas(json.imgInfos.value, originCanvasRef.current, tmpCanvasRef.current);
+            bgImgRef.current.crossOrigin = "Anonymous";
+            bgImgRef.current.src = json.imgInfos.value[0].thumbnailUrl + "&c=7&p=0";
+        });
         return () => {
-            originCanvas.delete();
             myc.delete();
         }
     }, []);
@@ -474,7 +239,6 @@ const Mosaic = React.memo((props) => {
     const onmove = (e) => {
         let x, y;
         if (e.touches) {
-            props.hide();
             if (prev.length >= 2) {
                 let dx = prev[0].pageX - prev[1].pageX;
                 let dy = prev[0].pageY - prev[1].pageY;
@@ -548,16 +312,15 @@ const Mosaic = React.memo((props) => {
         myc.vars.canMove = false;
     }
     const onImageLoaded = (e) => {
-        props.setImageLoaded(true);
-        myc.canRender = false;
-        myc.canAnimRun = false;
-        originCanvas.renderPicture(originCanvasRef.current);
+        bgImg.renderedW = bgImgRef.current.width;
+        bgImg.renderedH = bgImgRef.current.height;
+        bgImg.zeroX = (bgImgRef.current.width - bgImg.renderedW) / 2;
+        bgImg.zeroY = (bgImgRef.current.height - bgImg.renderedH) / 2;
+        bgImg.renderedPixel = bgImg.renderedW > bgImg.renderedH ? bgImg.renderedW : bgImg.renderedH;
         myc.animStart(canvasRef.current);
     }
-
     return (
         <>
-
             <img
                 className={styles.dispNone}
                 ref={bgImgRef}
