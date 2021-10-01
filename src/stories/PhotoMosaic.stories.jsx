@@ -9,5 +9,4 @@ export default {
 const Template = (args) => <PhotoMosaic {...args} />;
 
 export const Default = Template.bind({});
-Default.args = {
-};
+Default.args = {};
