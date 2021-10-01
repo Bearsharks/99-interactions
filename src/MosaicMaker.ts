@@ -103,7 +103,7 @@ async function doIt(data) {
             const x: number = j * MOSAIC_SIZE;
             const curPixel: number = 4 * (i * numOfColPixel + j);
             const lightness: number = Math.floor((3 * imageData[curPixel] + 4 * imageData[curPixel + 1] + imageData[curPixel + 2]) >>> 3);
-            ctx.fillStyle = 'rgb(' + lightness + "," + lightness + ',' + lightness + ')';
+            ctx.fillStyle = `rgb(${lightness},${lightness},${lightness})`;
             ctx.fillRect(x, y, MOSAIC_SIZE, MOSAIC_SIZE);
             position_lightness[lightness].push({ r: i, c: j });
         }
@@ -231,7 +231,7 @@ async function doIt(data) {
         }
     }
     for (let i = 0; i < totalImageNum; i++) {
-        renderMosaicPiece(imageInfos[i].thumbnailUrl + "&w=100&h=100&c=7", i);
+        renderMosaicPiece(`${imageInfos[i].thumbnailUrl}&w=100&h=100&c=7`, i);
     }
 }
 const worker = {
