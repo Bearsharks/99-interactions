@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { MyCanvas } from './refs/MyCanvas';
 import MosaicCanvas from './MosaicCanvas.ts'
 import styles from './PhotoMosaic.module.scss';
-import { isObjectBindingPattern } from 'typescript';
 
 
 const MosaicSize = 50;
@@ -53,9 +52,10 @@ const Mosaic = React.memo((props) => {
                 return [idxC, idxR];
             },
             click: (posX, posY) => {
-                return;
                 let x = myc.vars.curHoveredPos[0];
                 let y = myc.vars.curHoveredPos[1];
+                console.log(originCanvas.current.imgIdxOfMosaic[x][y]);
+                return;
                 if (0 <= x && x < originCanvas.current.numOfColPixel && 0 <= y && y < originCanvas.current.numOfRowPixel
                     && originCanvas.current.mosaicInfo[y][x].imageIdx !== null) {
                     //현재 마우스 포인터가 캔버스 기준으로
@@ -214,6 +214,7 @@ const Mosaic = React.memo((props) => {
             method: 'GET',
         }).then(res => res.json()
         ).then(json => {
+            images = json.imgInfos.value;
             originCanvas.current = new MosaicCanvas(json.imgInfos.value, originCanvasRef.current, tmpCanvasRef.current);
             bgImgRef.current.crossOrigin = "Anonymous";
             bgImgRef.current.src = json.imgInfos.value[0].thumbnailUrl + "&c=7&p=0";

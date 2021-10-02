@@ -1,7 +1,6 @@
 import { expose } from 'comlink'
 import { ImageInfo, Coord } from './refs/Types'
 import { MOSAIC_SIZE } from './refs/consts'
-import { isExportDefaultDeclaration } from '@babel/types';
 
 type MosaicPieceInfo = {
     bannedList: Set<number>,
@@ -80,7 +79,7 @@ async function getImage(url: string): Promise<ImageBitmap> {
 }
 
 
-async function doIt(data) {
+async function doIt(data, cb) {
     const canvas: OffscreenCanvas = data.canvas;
     const tmpCanvas: OffscreenCanvas = data.tmpCanvas;
     const imageInfos: ImageInfo[] = data.imageInfos;
@@ -135,6 +134,8 @@ async function doIt(data) {
         return idx * 4 + order;
     }
     async function renderRemain() {
+        const poss = new Array<Coord>();
+        const idx = new Array<number>();
         for (let lightness = 5; lightness < 245; lightness++) {
             let curPosArray: Coord[] = position_lightness[lightness];
 
@@ -161,6 +162,8 @@ async function doIt(data) {
                 }
 
                 ctx.putImageData(usableImages.get(imageIdx), pos.c * MOSAIC_SIZE, pos.r * MOSAIC_SIZE);
+                poss.push(pos);
+                idx.push(Math.floor(imageIdx / 4));
                 curPieceInfo.imageIdx = imageIdx;
 
 
@@ -175,6 +178,7 @@ async function doIt(data) {
                 }
             }
         }
+        if (poss.length) cb(poss, idx);
     }
     async function renderMosaicPiece(url, imgidx) {
         //이미지를 불러와서
@@ -182,6 +186,8 @@ async function doIt(data) {
         if (img) {
             tmpCtx.drawImage(img, 0, 0, 2 * MOSAIC_SIZE, 2 * MOSAIC_SIZE);
             //4등분한 각각의 데이터와 평균 밝기값 계산 후 같은 밝기의 조각에 그린다.
+            const poss = new Array<Coord>();
+            const idx = new Array<number>();
             for (let i = 0; i < 4; i++) {
                 let x = (i % 2 * MOSAIC_SIZE);
                 let y = Math.floor(i / 2) * MOSAIC_SIZE;
@@ -215,7 +221,10 @@ async function doIt(data) {
                             }
                         }
                     }
+                    imgData.data[0] = imgidx;
                     ctx.putImageData(imgData, pos.c * MOSAIC_SIZE, pos.r * MOSAIC_SIZE);
+                    poss.push(pos);
+                    idx.push(imgidx);
                     //채워진 모자이크는 지운다.
                     coords[curPos] = coords[coords.length - 1];
                     curPos++;
@@ -223,6 +232,7 @@ async function doIt(data) {
                     coords.pop();
                 }
             }
+            if (poss.length) cb(poss, idx);
         }
         renderedImageNum++;
         if (renderedImageNum === totalImageNum) {
