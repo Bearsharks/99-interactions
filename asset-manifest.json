@@ -1,21 +1,21 @@
 {
   "files": {
     "main.css": "/99-interactions/static/css/main.78b75cbd.chunk.css",
-    "main.js": "/99-interactions/static/js/main.800c79b3.chunk.js",
-    "main.js.map": "/99-interactions/static/js/main.800c79b3.chunk.js.map",
+    "main.js": "/99-interactions/static/js/main.bc512ce2.chunk.js",
+    "main.js.map": "/99-interactions/static/js/main.bc512ce2.chunk.js.map",
     "runtime-main.js": "/99-interactions/static/js/runtime-main.c1a0bcee.js",
     "runtime-main.js.map": "/99-interactions/static/js/runtime-main.c1a0bcee.js.map",
-    "static/js/2.541c0e3b.chunk.js": "/99-interactions/static/js/2.541c0e3b.chunk.js",
-    "static/js/2.541c0e3b.chunk.js.map": "/99-interactions/static/js/2.541c0e3b.chunk.js.map",
+    "static/js/2.4d655371.chunk.js": "/99-interactions/static/js/2.4d655371.chunk.js",
+    "static/js/2.4d655371.chunk.js.map": "/99-interactions/static/js/2.4d655371.chunk.js.map",
     "index.html": "/99-interactions/index.html",
     "static/css/main.78b75cbd.chunk.css.map": "/99-interactions/static/css/main.78b75cbd.chunk.css.map",
-    "static/js/2.541c0e3b.chunk.js.LICENSE.txt": "/99-interactions/static/js/2.541c0e3b.chunk.js.LICENSE.txt",
+    "static/js/2.4d655371.chunk.js.LICENSE.txt": "/99-interactions/static/js/2.4d655371.chunk.js.LICENSE.txt",
     "static/media/index.module.css": "/99-interactions/static/media/help_white_24dp.3cf737a8.svg"
   },
   "entrypoints": [
     "static/js/runtime-main.c1a0bcee.js",
-    "static/js/2.541c0e3b.chunk.js",
+    "static/js/2.4d655371.chunk.js",
     "static/css/main.78b75cbd.chunk.css",
-    "static/js/main.800c79b3.chunk.js"
+    "static/js/main.bc512ce2.chunk.js"
   ]
 }
