@@ -1,0 +1,77 @@
+//저장된 이미지 정보 요청
+const fs = require('fs');
+const util = require('util');
+const readFile = util.promisify(fs.readFile);
+
+module.exports = async function (context, req) {
+    let data = {
+        date: 0,
+        imgInfos: null,
+        todayPerson: null,
+    };
+    let imageData = await readFile('data.txt', 'utf8');
+    data = JSON.parse(imageData);
+
+    context.res = {
+        status: 200,
+        headers: {
+            "cache-control": "public, max-age=28800",
+            "Content-Type": "application/json"
+        },
+        body: data
+    };
+}
+
+//이미지 정보 저장
+const fs = require('fs');
+const util = require('util');
+const axios = require('axios')
+const readFile = util.promisify(fs.readFile);
+
+module.exports = async function (context, myTimer) {
+    var timeStamp = new Date().toISOString();
+
+    if (myTimer.IsPastDue) {
+        context.log('JavaScript is running late!');
+    }
+    context.log('JavaScript timer trigger function ran!', timeStamp);
+
+    let todaySong = "귀여운 새끼 황제 펭귄";
+    let data = {
+        date: 0,
+        imgInfos: "",
+        todaySong: "",
+    };
+
+    ////try {
+    //    let melonTop100Data = await axios({
+    ////        method: 'get',
+    //        url: 'https://melon.danielko.me/api/v1/chart/live'
+    //    });
+    //    todaySong = `${melonTop100Data.data[1].name} ${melonTop100Data.data[1].artists}`;
+    //} catch (err) {
+    //    context.log(err);
+    //}
+    try {
+        data.date = timeStamp;
+        let searchResult = await axios({
+            method: 'get',
+            url: 'https://api.bing.microsoft.com/v7.0/images/search',
+            params: {
+                q: todaySong + " -악보",
+                count: 150,
+            },
+            headers: {
+                'Ocp-Apim-Subscription-Key': "빙이미지검색구독키"
+            }
+        });
+        data.imgInfos = searchResult.data;
+        data.todaySong = todaySong;
+        fs.writeFile('data.txt', JSON.stringify(data), 'utf8', function (err) {
+            ;
+        });
+    } catch (err) {
+        context.log(err);
+    }
+
+};

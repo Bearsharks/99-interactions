@@ -1,6 +1,6 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Route, NavLink, Link, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import styles from './index.module.css';
 import Mosaic from './Mosaic'
 import PopUp from './PopUp'
@@ -9,10 +9,9 @@ import Spinner from './Spinner';
 class Main extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = { popUpInfo: null, todaySong: "", imageLoaded: false };
+		this.state = { popUpInfo: null, imageLoaded: false };
 		this.popUp = this.popUp.bind(this);
 		this.hide = this.hide.bind(this);
-		this.setTodaySong = this.setTodaySong.bind(this);
 		this.setImageLoaded = this.setImageLoaded.bind(this);
 	}
 	popUp(popUpInfo) {
@@ -30,12 +29,6 @@ class Main extends React.Component {
 			popUpInfo: null
 		});
 	}
-
-	setTodaySong(msg) {
-		this.setState({
-			todaySong: msg
-		});
-	}
 	setImageLoaded(msg) {
 		this.setState({
 			imageLoaded: msg
@@ -51,15 +44,8 @@ class Main extends React.Component {
 				<div className={styles.container}>
 					<main>
 						<div className={styles.photoinfo}>
-							<span className={styles.noti + " material-icons-outlined"}>
-								<div>
-									<a href="https://www.melon.com/chart/day/index.htm" target='_blank' rel="noreferrer">
-										멜론 일간 차트
-									</a>
-									, 1위
-								</div>
-							</span>
-							<h1>{this.state.todaySong}</h1>
+
+							<h1>황제펭귄</h1>
 
 						</div>
 						<div className={styles.photomosaic}>

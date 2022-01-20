@@ -3,7 +3,7 @@ import { MyCanvas } from './lib/MyCanvas';
 import GreyScaleMaker from "./greyScaleMaker";
 
 import styles from './Mosaic.module.css';
-
+import images from './images/images'
 
 const MosaicSize = 50;
 const NumOfPixel = 170;
@@ -30,18 +30,6 @@ const Mosaic = React.memo((props) => {
     let tmpCanvasRef = useRef(null);
     let bgImgRef = useRef(null);
     let bgImg = {};
-    let images = [];
-    fetch("https://99-interactions-functions.azurewebsites.net/api/HttpTrigger1?code=gyPykVBnZ5lSl3vwOm3BvEojwZolAbHSuujci28YxApqalzrA2rHfw==", {
-        method: 'GET',
-    }).then(res =>
-        res.json()
-    )
-        .then(json => {
-            images = json.imgInfos.value;
-            bgImgRef.current.crossOrigin = "Anonymous";
-            bgImgRef.current.src = images[0].thumbnailUrl + "&c=7&p=0";
-            props.setTodaySong(json.todaySong);
-        });
     const preventDefault = e => e.preventDefault();
     let myc = new MyCanvas({
         consts: {
@@ -452,6 +440,8 @@ const Mosaic = React.memo((props) => {
     useEffect(() => {
         canvasRef.current.addEventListener('wheel', preventDefault);
         canvasRef.current.addEventListener('touchmove', preventDefault);
+        bgImgRef.current.crossOrigin = "Anonymous";
+        bgImgRef.current.src = images[0].thumbnailUrl + "&c=7&p=0";
         return () => {
             originCanvas.delete();
             myc.delete();
